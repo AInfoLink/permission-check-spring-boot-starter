@@ -108,10 +108,8 @@ class SpringSecurityConfig(
 
     @Bean
     fun roleHierarchy(): RoleHierarchy {
-        val hierarchy = RoleHierarchyImpl()
         val hierarchyChain = Role.entries.joinToString(" > ", transform = { it.value })
-        hierarchy.setHierarchy(hierarchyChain)
-        return hierarchy
+        return RoleHierarchyImpl.fromHierarchy(hierarchyChain)
     }
 
     // and, if using pre-post method security also add
