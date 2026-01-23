@@ -57,6 +57,11 @@ class UserProfile(
 
     @Column(name = "is_active", nullable = false)
     var isActive: Boolean = true,
+
+
+    @Column(name = "wallet_balance", nullable = false)
+    var walletBalance: Int = 0,
+
 ): HasResourceOwner {
 
     fun addTenantRole(role: String) {
