@@ -1,0 +1,36 @@
+spring:
+  application:
+    name: multi-tenant-booking-service
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/booking
+    username: postgres
+    password: localdev
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        multiTenancy: SCHEMA
+        show_sql: true
+        format_sql: true
+
+  profiles:
+    active: local
+
+# 開發環境配置
+server:
+  port: 8080
+
+logging:
+  level:
+    com.module.multitenantbookingservice: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics

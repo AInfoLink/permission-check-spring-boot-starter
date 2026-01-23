@@ -6,6 +6,13 @@ plugins {
     kotlin("plugin.jpa") version "1.9.25"
 }
 
+
+dependencyManagement {
+    imports {
+        mavenBom("org.springframework.cloud:spring-cloud-dependencies:2023.0.0")
+    }
+}
+
 group = "com.module"
 version = "0.0.1-SNAPSHOT"
 description = "multi-tenant-booking-service"
@@ -34,6 +41,16 @@ dependencies {
     testImplementation("org.testcontainers:junit-jupiter")
     testImplementation("org.testcontainers:postgresql")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
+    // JWT
+    implementation("io.jsonwebtoken:jjwt-api:0.12.6")
+    runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")
+    runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.6")
+
+    implementation("org.springframework.cloud:spring-cloud-starter-openfeign")
+    implementation("io.netty:netty-codec-http:4.1.97.Final")
+
+
 }
 
 kotlin {
