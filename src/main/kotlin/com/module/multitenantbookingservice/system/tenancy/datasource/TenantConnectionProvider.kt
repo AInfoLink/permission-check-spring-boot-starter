@@ -2,6 +2,7 @@ package com.module.multitenantbookingservice.system.tenancy.datasource
 
 import org.hibernate.cfg.AvailableSettings
 import org.hibernate.engine.jdbc.connections.spi.MultiTenantConnectionProvider
+import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.orm.jpa.HibernatePropertiesCustomizer
 import org.springframework.stereotype.Component
 import java.sql.Connection
@@ -12,6 +13,7 @@ import javax.sql.DataSource
 class TenantConnectionProvider(
     val datasource: DataSource
 ): MultiTenantConnectionProvider<String>, HibernatePropertiesCustomizer {
+    private val logger = LoggerFactory.getLogger(TenantConnectionProvider::class.java)
     private val COMMON_SCHEMA = "PUBLIC"
     override fun isUnwrappableAs(p0: Class<*>): Boolean {
         return datasource.isWrapperFor(p0)
@@ -40,6 +42,7 @@ class TenantConnectionProvider(
     }
 
     override fun getConnection(tenantId: String): Connection {
+        logger.info("Getting connection for tenant: $tenantId")
         datasource.connection.schema = tenantId
         return datasource.connection
     }

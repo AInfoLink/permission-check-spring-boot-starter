@@ -5,12 +5,14 @@ import org.slf4j.LoggerFactory
 
 class TenantContextHolder {
     companion object {
+        private val COMMON_SCHEMA = "PUBLIC"
+
         private val logger = LoggerFactory.getLogger(TenantContextHolder::class.java)
         private val contextHolder: ThreadLocal<String> = InheritableThreadLocal()
 
         fun setTenantId(tenantId: String?) {
             logger.debug("Setting tenant ID in context: $tenantId")
-            contextHolder.set(tenantId)
+            contextHolder.set(tenantId ?: COMMON_SCHEMA )
         }
 
         fun getTenantId(): String {
