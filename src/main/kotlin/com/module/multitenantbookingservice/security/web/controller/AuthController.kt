@@ -1,4 +1,4 @@
-package com.app.security.web.controller
+package com.module.multitenantbookingservice.security.web.controller
 
 import com.app.security.repository.model.User
 import com.module.multitenantbookingservice.security.service.AuthService

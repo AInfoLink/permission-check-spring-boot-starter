@@ -1,4 +1,4 @@
-package com.app.security.web.handler
+package com.module.multitenantbookingservice.security.web.handler
 
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse

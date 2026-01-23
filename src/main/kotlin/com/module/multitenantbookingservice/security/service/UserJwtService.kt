@@ -1,15 +1,15 @@
 package com.module.multitenantbookingservice.security.service
 
 import com.app.security.repository.model.User
+import com.module.multitenantbookingservice.security.config.SecurityProperties
 import jakarta.annotation.PostConstruct
-import org.springframework.boot.autoconfigure.web.WebProperties
 import org.springframework.stereotype.Service
 import java.util.*
 
 
 @Service
 class UserJwtService(
-    val webProperties: WebProperties,
+    val securityProperties: SecurityProperties,
     val defaultJwtService: DefaultJwtService,
 ) : JwtService<User> {
     override lateinit var secret: ByteArray
@@ -17,7 +17,7 @@ class UserJwtService(
 
     @PostConstruct
     fun postConstruct() {
-        secret = Base64.getDecoder().decode(webProperties.jwtSecret)
+        secret = Base64.getDecoder().decode(securityProperties.jwtSecret)
     }
 
     override fun parseToken(token: String): User? {

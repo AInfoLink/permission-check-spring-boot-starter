@@ -1,5 +1,5 @@
-package com.app.security.web.controller
-import com.app.core.otel.TraceUtils
+package com.module.multitenantbookingservice.security.web.controller
+import com.module.multitenantbookingservice.monitoring.otel.TraceUtils
 import jakarta.servlet.http.HttpServletRequest
 import org.slf4j.LoggerFactory
 import org.springframework.core.annotation.Order

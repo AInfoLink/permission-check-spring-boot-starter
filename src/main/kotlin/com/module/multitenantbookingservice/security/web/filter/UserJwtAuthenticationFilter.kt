@@ -1,4 +1,4 @@
-package com.app.security.web.filter
+package com.module.multitenantbookingservice.security.web.filter
 
 
 import com.module.multitenantbookingservice.security.service.UserJwtService

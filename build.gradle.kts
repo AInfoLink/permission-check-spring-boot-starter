@@ -50,6 +50,9 @@ dependencies {
     implementation("org.springframework.cloud:spring-cloud-starter-openfeign")
     implementation("io.netty:netty-codec-http:4.1.97.Final")
 
+    implementation("io.opentelemetry:opentelemetry-api:1.42.1")
+
+
 
 }
 

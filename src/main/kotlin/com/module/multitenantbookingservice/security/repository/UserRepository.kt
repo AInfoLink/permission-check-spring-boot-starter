@@ -1,4 +1,4 @@
-package com.app.security.repository
+package com.module.multitenantbookingservice.security.repository
 
 import com.app.security.repository.model.User
 import org.springframework.data.domain.Page

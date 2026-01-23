@@ -1,5 +1,6 @@
 package com.module.multitenantbookingservice.security.service
 
+import com.module.multitenantbookingservice.security.config.SecurityProperties
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.JwtException
 import io.jsonwebtoken.Jwts
@@ -23,7 +24,7 @@ interface JwtService<T> {
 class DefaultJwtService(
     @Value("\${spring.application.name}")
     val issuer: String,
-    val webProperties: WebProperties
+    val securityProperties: SecurityProperties
 ): JwtService<Map<String, Any>>, TokenIssuer<Map<String, Any>> {
 
     override lateinit var secret: ByteArray
@@ -31,7 +32,7 @@ class DefaultJwtService(
 
     @PostConstruct
     fun postConstruct() {
-        secret = Base64.getDecoder().decode(webProperties.jwtSecret)
+        secret = Base64.getDecoder().decode(securityProperties.jwtSecret)
     }
 
     override fun issueToken(claims: Map<String, Any>, expireAtNumberOfSeconds: Int): String {

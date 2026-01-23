@@ -1,8 +1,8 @@
-package com.app.security.service
+package com.module.multitenantbookingservice.security.service
 
-import com.app.security.UserNotFound
-import com.app.security.repository.UserRepository
+import com.module.multitenantbookingservice.security.repository.UserRepository
 import com.app.security.repository.model.User
+import com.module.multitenantbookingservice.security.UserNotFound
 import org.springframework.data.domain.Pageable
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
