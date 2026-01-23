@@ -29,7 +29,7 @@ class UserJwtService(
             systemRoles = (claims["systemRoles"] as List<*>).map { it.toString() }.toMutableSet(),
             password = "(sensitive)",
             provider = claims["provider"] as String,
-            isVerified = claims["isVerified"] as Boolean
+            isEmailVerified = claims["isVerified"] as Boolean
         )
     }
 

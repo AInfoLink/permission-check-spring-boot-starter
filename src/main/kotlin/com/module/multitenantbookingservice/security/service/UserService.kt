@@ -32,7 +32,6 @@ class DefaultUserService(
             optionalUser.assumeRoles(user.systemRoles)
             return userRepository.save(optionalUser)
         }
-        user.verify()
         val savedUser = userRepository.save(user)
         return savedUser
     }

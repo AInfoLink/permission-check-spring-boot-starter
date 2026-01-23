@@ -44,8 +44,15 @@ class User(
     @CollectionTable(name = "system_roles", joinColumns = [JoinColumn(name = "user_id")])
     val systemRoles: MutableSet<String> = mutableSetOf(),
 
-    @Column(name = "is_verified", nullable = false)
-    var isVerified: Boolean = false,
+    @Column(name = "is_email_verified", nullable = false)
+    var isEmailVerified: Boolean = false,
+
+    @Column(name = "phone_number", nullable = true)
+    var phoneNumber: String? = null,
+
+    @Column(name = "is_phone_verified", nullable = false)
+    var isPhoneVerified: Boolean = false,
+
     ) : UserDetails {
 
     companion object {
@@ -56,8 +63,12 @@ class User(
         return provider == DEFAULT_PLATFORM
     }
 
-    fun verify() {
-        this.isVerified = true
+    fun markEmailAsVerified() {
+        this.isEmailVerified = true
+    }
+
+    fun markPhoneAsVerified() {
+        this.isPhoneVerified = true
     }
 
     constructor(userId: UUID, name: String, email: String,password: String, provider: String, roles: Iterable<String>) : this(
@@ -81,7 +92,7 @@ class User(
 
     override fun isCredentialsNonExpired(): Boolean = true
 
-    override fun isEnabled(): Boolean = this.isVerified
+    override fun isEnabled(): Boolean = this.isEmailVerified || this.isPhoneVerified
 
     fun assumeRoles(roles: Iterable<String>) {
         this.systemRoles.clear()
