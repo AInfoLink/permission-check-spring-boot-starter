@@ -20,7 +20,6 @@ class Venue(
     @JoinColumn(name = "venue_group_id")
     var venueGroup: VenueGroup,
 
-    @ManyToOne
-    @JoinColumn(name = "venue_schedule_config_id")
-    val scheduleConfig: VenueScheduleConfig
+    @Embedded
+    var scheduleConfig: VenueScheduleConfig = VenueScheduleConfig()
 )
