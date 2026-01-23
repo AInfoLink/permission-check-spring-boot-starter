@@ -9,3 +9,7 @@ data class AppDomainException(
 
 // 404 Not Found - Resource not found
 val UserNotFound = AppDomainException("UserNotFound", statusCode = HttpStatus.NOT_FOUND)
+val UserProfileNotCreated = AppDomainException("UserProfileNotCreated", statusCode = HttpStatus.NOT_FOUND)
+
+// 409 Conflict - Resource already exists
+val UserProfileAlreadyExists = AppDomainException("UserProfileAlreadyExists", statusCode = HttpStatus.CONFLICT)
