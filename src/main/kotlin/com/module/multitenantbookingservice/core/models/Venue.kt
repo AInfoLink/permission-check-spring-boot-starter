@@ -13,11 +13,14 @@ class Venue(
     val id: UUID = UUID.randomUUID(),
     var name: String,
     var description: String,
-    var isEnabled: Boolean,
     var location: String,
     @JdbcTypeCode(SqlTypes.JSON)
     val annotations: MutableMap<String, String> = mutableMapOf(),
     @ManyToOne
     @JoinColumn(name = "venue_group_id")
-    var venueGroup: VenueGroup
+    var venueGroup: VenueGroup,
+
+    @ManyToOne
+    @JoinColumn(name = "venue_schedule_config_id")
+    val scheduleConfig: VenueScheduleConfig
 )

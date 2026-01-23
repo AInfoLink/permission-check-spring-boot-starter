@@ -4,8 +4,17 @@ import org.springframework.http.HttpStatus
 
 data class AppDomainException(
     val code: String,
-    val statusCode: HttpStatus = HttpStatus.BAD_REQUEST
-): Exception(code)
+    val statusCode: HttpStatus = HttpStatus.BAD_REQUEST,
+    val details: String? = null
+): Exception(code) {
+    fun withDetails(details: String): AppDomainException {
+        return AppDomainException(
+            code = this.code,
+            statusCode = this.statusCode,
+            details = details
+        )
+    }
+}
 
 // 404 Not Found - Resource not found
 val UserNotFound = AppDomainException("UserNotFound", statusCode = HttpStatus.NOT_FOUND)
@@ -13,3 +22,7 @@ val UserProfileNotCreated = AppDomainException("UserProfileNotCreated", statusCo
 
 // 409 Conflict - Resource already exists
 val UserProfileAlreadyExists = AppDomainException("UserProfileAlreadyExists", statusCode = HttpStatus.CONFLICT)
+
+
+// 400 Bad Request - Invalid request
+val InvalidSlotDuration = AppDomainException("InvalidSlotDuration")
