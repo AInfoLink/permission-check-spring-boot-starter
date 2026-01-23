@@ -63,10 +63,6 @@ class User(
         return provider == DEFAULT_PLATFORM
     }
 
-    fun markEmailAsVerified() {
-        this.isEmailVerified = true
-    }
-
     fun markPhoneAsVerified() {
         this.isPhoneVerified = true
     }
