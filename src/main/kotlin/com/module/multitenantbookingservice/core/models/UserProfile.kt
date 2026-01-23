@@ -1,6 +1,7 @@
 package com.module.multitenantbookingservice.core.models
 
 import com.app.security.repository.model.User
+import com.module.multitenantbookingservice.security.permission.HasResourceOwner
 import jakarta.persistence.*
 import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.type.SqlTypes
@@ -56,10 +57,7 @@ class UserProfile(
 
     @Column(name = "is_active", nullable = false)
     var isActive: Boolean = true,
-
-    @Column(name = "notes")
-    var notes: String? = null
-) {
+): HasResourceOwner {
 
     fun addTenantRole(role: String) {
         tenantRoles.add(role)
@@ -79,5 +77,9 @@ class UserProfile(
 
     fun activate() {
         isActive = true
+    }
+
+    override fun getResourceOwnerId(): String {
+        return user.id.toString()
     }
 }
