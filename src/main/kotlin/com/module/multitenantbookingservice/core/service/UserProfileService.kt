@@ -1,6 +1,5 @@
 package com.module.multitenantbookingservice.core.service
 
-import com.app.security.repository.model.User
 import com.module.multitenantbookingservice.core.models.UserProfile
 import com.module.multitenantbookingservice.core.repository.UserProfileRepository
 import com.module.multitenantbookingservice.security.UserNotFound
