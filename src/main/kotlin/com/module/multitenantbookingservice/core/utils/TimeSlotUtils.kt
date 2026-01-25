@@ -18,7 +18,7 @@ object TimeSlotUtils {
      */
     private const val STANDARD_TIME_SLOT_MINUTES = 15
 
-    fun alignToStandardTimeSlot(dateTime: LocalDateTime, roundUp: Boolean = false): LocalDateTime {
+    private fun alignToStandardTimeSlot(dateTime: LocalDateTime, roundUp: Boolean = false): LocalDateTime {
         val minutes = dateTime.minute
         val alignedMinutes = if (roundUp) {
             ((minutes / STANDARD_TIME_SLOT_MINUTES) + 1) * STANDARD_TIME_SLOT_MINUTES
