@@ -100,12 +100,12 @@ table "order_identities" {
   primary_key {
     columns = [column.id]
   }
-  # foreign_key "fk_order_identities_user_id" {
-  #   columns     = [column.user_id]
-  #   ref_columns = [table.users.column.id]
-  #   on_update   = NO_ACTION
-  #   on_delete   = NO_ACTION
-  # }
+  foreign_key "fk_order_identities_user_id" {
+    columns     = [column.user_id]
+    ref_columns = [table.users.column.id]
+    on_update   = NO_ACTION
+    on_delete   = NO_ACTION
+  }
   check "order_identities_type_check" {
     expr = "((type)::text = ANY ((ARRAY['USER'::character varying, 'GUEST'::character varying, 'SYSTEM'::character varying])::text[]))"
   }
@@ -304,15 +304,16 @@ table "user_profiles" {
     null = false
     type = uuid
   }
+
   primary_key {
     columns = [column.id]
   }
-  # foreign_key "fk_user_profiles_user_id" {
-  #   columns     = [column.user_id]
-  #   ref_columns = [table.users.column.id]
-  #   on_update   = NO_ACTION
-  #   on_delete   = NO_ACTION
-  # }
+  foreign_key "fk_user_profiles_user_id" {
+    columns     = [column.user_id]
+    ref_columns = [table.users.column.id]
+    on_update   = NO_ACTION
+    on_delete   = NO_ACTION
+  }
   index "idx_user_profiles_active" {
     columns = [column.is_active]
   }
