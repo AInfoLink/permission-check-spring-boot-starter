@@ -27,7 +27,6 @@ data class VenueUpdate(
     val venueGroupId: UUID? = null,
     val bookingSlotType: BookingSlotType? = null,
     val isScheduleActive: Boolean? = null,
-    val annotations: MutableMap<String, Any>? = null,
     val scheduleAnnotations: MutableMap<String, Any>? = null
 )
 
@@ -165,7 +164,6 @@ class DefaultVenueService(
         val scheduleConfig = VenueScheduleConfig(
             bookingSlotType = venue.bookingSlotType,
             isActive = venue.isScheduleActive,
-            annotations = venue.scheduleAnnotations
         )
 
         val newVenue = Venue(
@@ -231,9 +229,6 @@ class DefaultVenueService(
 
         update.bookingSlotType?.let { venue.scheduleConfig.bookingSlotType = it }
         update.isScheduleActive?.let { venue.scheduleConfig.isActive = it }
-
-        update.annotations?.let { venue.annotations.putAll(it) }
-        update.scheduleAnnotations?.let { venue.scheduleConfig.annotations.putAll(it) }
 
         return venueRepository.save(venue)
     }
