@@ -29,7 +29,7 @@ class ItemCategoryService(
     fun init() {
         // 確保 categoryConfig 已經載入完成
         categoryConfig.loadConfig()
-        initializeSystemManagedCategories()
+//        initializeSystemManagedCategories()
     }
 
     @Transactional
@@ -43,8 +43,8 @@ class ItemCategoryService(
                     type = CategoryType.SYSTEM_MANAGED,
                     operationType = OperationType.valueOf(config.operationType),
                     isActive = true,
-                    createdAt = java.time.Instant.now(),
-                    updatedAt = java.time.Instant.now()
+                    createdAt = Instant.now(),
+                    updatedAt = Instant.now()
                 )
                 categoryRepository.save(category)
             }

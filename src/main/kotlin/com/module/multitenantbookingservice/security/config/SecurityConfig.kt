@@ -29,7 +29,7 @@ import org.springframework.web.cors.CorsConfigurationSource
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 
 
-@ConfigurationProperties(prefix = "web")
+@ConfigurationProperties(prefix = "security")
 class SecurityProperties(
     /**
      * List of routes that do not require authentication.
@@ -108,8 +108,10 @@ class SpringSecurityConfig(
 
     @Bean
     fun roleHierarchy(): RoleHierarchy {
+        val hierarchy = RoleHierarchyImpl()
         val hierarchyChain = Role.entries.joinToString(" > ", transform = { it.value })
-        return RoleHierarchyImpl.fromHierarchy(hierarchyChain)
+        hierarchy.setHierarchy(hierarchyChain)
+        return hierarchy
     }
 
     // and, if using pre-post method security also add
