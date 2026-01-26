@@ -1,12 +1,9 @@
 package com.module.multitenantbookingservice.core.web.controller
 
 import com.module.multitenantbookingservice.core.models.UserProfile
-import com.module.multitenantbookingservice.core.service.UserProfileCreation
-import com.module.multitenantbookingservice.core.service.UserProfileService
-import com.module.multitenantbookingservice.core.service.UserProfileUpdate
+import com.module.multitenantbookingservice.core.service.*
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
-import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
 import java.util.*
 
@@ -16,14 +13,12 @@ class UserProfileController(
     private val userProfileService: UserProfileService
 ) {
 
-    @PostMapping
-    fun createUserProfile(@RequestBody request: CreateUserProfileRequest): ResponseEntity<UserProfile> {
-        val creation = UserProfileCreation(
-            tenantRoles = request.tenantRoles,
-            walletBalance = request.walletBalance,
-            isActive = request.isActive
-        )
-        val userProfile = userProfileService.createUserProfile(request.userId, creation)
+    @PostMapping("/{userId}")
+    fun createUserProfile(
+        @PathVariable userId: UUID,
+        @RequestBody profile: UserProfileCreation
+    ): ResponseEntity<UserProfile> {
+        val userProfile = userProfileService.createUserProfile(userId, profile)
         return ResponseEntity(userProfile, HttpStatus.CREATED)
     }
 
@@ -51,28 +46,18 @@ class UserProfileController(
     @PostMapping("/{userId}/roles")
     fun addTenantRole(
         @PathVariable userId: UUID,
-        @RequestBody request: TenantRoleRequest
+        @RequestBody roleOperation: TenantRoleOperation
     ): ResponseEntity<UserProfile> {
-        val userProfile = userProfileService.getUserProfile(userId)
-        userProfile.addTenantRole(request.role)
-        val updatedProfile = userProfileService.updateUserProfile(
-            userId,
-            UserProfileUpdate(tenantRoles = userProfile.tenantRoles)
-        )
+        val updatedProfile = userProfileService.addTenantRole(userId, roleOperation)
         return ResponseEntity.ok(updatedProfile)
     }
 
     @DeleteMapping("/{userId}/roles")
     fun removeTenantRole(
         @PathVariable userId: UUID,
-        @RequestBody request: TenantRoleRequest
+        @RequestBody roleOperation: TenantRoleOperation
     ): ResponseEntity<UserProfile> {
-        val userProfile = userProfileService.getUserProfile(userId)
-        userProfile.removeTenantRole(request.role)
-        val updatedProfile = userProfileService.updateUserProfile(
-            userId,
-            UserProfileUpdate(tenantRoles = userProfile.tenantRoles)
-        )
+        val updatedProfile = userProfileService.removeTenantRole(userId, roleOperation)
         return ResponseEntity.ok(updatedProfile)
     }
 
@@ -97,27 +82,10 @@ class UserProfileController(
     @PatchMapping("/{userId}/wallet-balance")
     fun updateWalletBalance(
         @PathVariable userId: UUID,
-        @RequestBody request: WalletBalanceUpdateRequest
+        @RequestBody balanceUpdate: WalletBalanceUpdate
     ): ResponseEntity<UserProfile> {
-        val updatedProfile = userProfileService.updateUserProfile(
-            userId,
-            UserProfileUpdate(walletBalance = request.walletBalance)
-        )
+        val updatedProfile = userProfileService.updateWalletBalance(userId, balanceUpdate)
         return ResponseEntity.ok(updatedProfile)
     }
 }
 
-data class CreateUserProfileRequest(
-    val userId: UUID,
-    val tenantRoles: MutableSet<String> = mutableSetOf(),
-    val walletBalance: Int = 0,
-    val isActive: Boolean = true
-)
-
-data class TenantRoleRequest(
-    val role: String
-)
-
-data class WalletBalanceUpdateRequest(
-    val walletBalance: Int
-)

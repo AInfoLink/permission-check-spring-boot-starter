@@ -23,11 +23,26 @@ data class UserProfileUpdate(
     val isActive: Boolean? = null
 )
 
+data class TenantRoleOperation(
+    val role: String
+)
+
+data class WalletBalanceUpdate(
+    val walletBalance: Int
+)
+
 interface UserProfileService {
     fun createUserProfile(userId: UUID, profile: UserProfileCreation): UserProfile
     fun getUserProfile(userId: UUID): UserProfile
     fun updateUserProfile(userId: UUID, update: UserProfileUpdate): UserProfile
     fun deleteUserProfile(userId: UUID)
+
+    // Tenant role operations
+    fun addTenantRole(userId: UUID, roleOperation: TenantRoleOperation): UserProfile
+    fun removeTenantRole(userId: UUID, roleOperation: TenantRoleOperation): UserProfile
+
+    // Wallet balance operation
+    fun updateWalletBalance(userId: UUID, balanceUpdate: WalletBalanceUpdate): UserProfile
 }
 
 @Service
@@ -92,5 +107,35 @@ class DefaultUserProfileService(
     override fun deleteUserProfile(userId: UUID) {
         val userProfile = userProfileRepository.findByUserId(userId).getOrNull() ?: return
         userProfileRepository.delete(userProfile)
+    }
+
+    /**
+     * 添加租戶角色
+     */
+    @Transactional
+    override fun addTenantRole(userId: UUID, roleOperation: TenantRoleOperation): UserProfile {
+        val userProfile = userProfileRepository.findByUserId(userId).getOrNull() ?: throw UserProfileNotCreated
+        userProfile.addTenantRole(roleOperation.role)
+        return userProfileRepository.save(userProfile)
+    }
+
+    /**
+     * 移除租戶角色
+     */
+    @Transactional
+    override fun removeTenantRole(userId: UUID, roleOperation: TenantRoleOperation): UserProfile {
+        val userProfile = userProfileRepository.findByUserId(userId).getOrNull() ?: throw UserProfileNotCreated
+        userProfile.removeTenantRole(roleOperation.role)
+        return userProfileRepository.save(userProfile)
+    }
+
+    /**
+     * 更新錢包餘額
+     */
+    @Transactional
+    override fun updateWalletBalance(userId: UUID, balanceUpdate: WalletBalanceUpdate): UserProfile {
+        val userProfile = userProfileRepository.findByUserId(userId).getOrNull() ?: throw UserProfileNotCreated
+        userProfile.walletBalance = balanceUpdate.walletBalance
+        return userProfileRepository.save(userProfile)
     }
 }

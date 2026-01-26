@@ -32,6 +32,10 @@ data class OrderUpdate(
     val paymentStatus: PaymentStatus? = null
 )
 
+data class PaymentStatusUpdate(
+    val status: PaymentStatus
+)
+
 interface OrderService {
     fun createOrderIdentity(identity: OrderIdentityCreation): OrderIdentity
     // Order operations
@@ -43,7 +47,7 @@ interface OrderService {
     fun getOrdersByEmailAndStatus(email: String, status: PaymentStatus): List<Order>
     fun getAllOrders(): List<Order>
     fun updateOrder(orderId: UUID, update: OrderUpdate): Order
-    fun updatePaymentStatus(orderId: UUID, status: PaymentStatus): Order
+    fun updatePaymentStatus(orderId: UUID, update: PaymentStatusUpdate): Order
     fun deleteOrder(orderId: UUID)
 }
 
@@ -173,9 +177,9 @@ class DefaultOrderService(
      * 更新訂單支付狀態
      */
     @Transactional
-    override fun updatePaymentStatus(orderId: UUID, status: PaymentStatus): Order {
+    override fun updatePaymentStatus(orderId: UUID, update: PaymentStatusUpdate): Order {
         val order = orderRepository.findById(orderId).getOrNull() ?: throw OrderNotFound
-        order.paymentStatus = status
+        order.paymentStatus = update.status
         return orderRepository.save(order)
     }
 

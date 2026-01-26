@@ -6,6 +6,7 @@ import com.module.multitenantbookingservice.core.models.PaymentStatus
 import com.module.multitenantbookingservice.core.service.OrderCreation
 import com.module.multitenantbookingservice.core.service.OrderService
 import com.module.multitenantbookingservice.core.service.OrderUpdate
+import com.module.multitenantbookingservice.core.service.PaymentStatusUpdate
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -74,9 +75,9 @@ class OrderController(
     @PatchMapping("/{orderId}/payment-status")
     fun updatePaymentStatus(
         @PathVariable orderId: UUID,
-        @RequestBody request: PaymentStatusUpdateRequest
+        @RequestBody update: PaymentStatusUpdate
     ): ResponseEntity<Order> {
-        val order = orderService.updatePaymentStatus(orderId, request.status)
+        val order = orderService.updatePaymentStatus(orderId, update)
         return ResponseEntity.ok(order)
     }
 
@@ -87,13 +88,3 @@ class OrderController(
     }
 }
 
-data class PaymentStatusUpdateRequest(
-    val status: PaymentStatus
-)
-
-data class FindOrCreateIdentityRequest(
-    val email: String,
-    val name: String,
-    val type: IdentityType,
-    val userId: UUID? = null
-)

@@ -58,12 +58,8 @@ class VenueController(
     @PatchMapping("/{venueId}/schedule-config")
     fun updateVenueScheduleConfig(
         @PathVariable venueId: UUID,
-        @RequestBody request: ScheduleConfigUpdateRequest
+        @RequestBody update: VenueUpdate
     ): ResponseEntity<Venue> {
-        val update = VenueUpdate(
-            bookingSlotType = request.bookingSlotType,
-            isScheduleActive = request.isActive
-        )
         val venue = venueService.updateVenue(venueId, update)
         return ResponseEntity.ok(venue)
     }
@@ -71,9 +67,9 @@ class VenueController(
     @PatchMapping("/{venueId}/move-to-group")
     fun moveVenueToGroup(
         @PathVariable venueId: UUID,
-        @RequestBody request: MoveVenueRequest
+        @RequestBody newVenueGroupId: UUID
     ): ResponseEntity<Venue> {
-        val update = VenueUpdate(venueGroupId = request.newVenueGroupId)
+        val update = VenueUpdate(venueGroupId = newVenueGroupId)
         val venue = venueService.updateVenue(venueId, update)
         return ResponseEntity.ok(venue)
     }
@@ -85,11 +81,3 @@ class VenueController(
     }
 }
 
-data class ScheduleConfigUpdateRequest(
-    val bookingSlotType: BookingSlotType? = null,
-    val isActive: Boolean? = null
-)
-
-data class MoveVenueRequest(
-    val newVenueGroupId: UUID
-)
