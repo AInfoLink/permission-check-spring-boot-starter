@@ -36,18 +36,19 @@ class ItemCategoryService(
     fun initializeSystemManagedCategories() {
         categoryConfig.systemManagedCategories.forEach { config ->
             if (!categoryRepository.existsByCode(config.code)) {
-                val category = ItemCategory(
-                    code = config.code,
-                    name = config.name,
-                    description = config.description,
-                    type = CategoryType.SYSTEM_MANAGED,
-                    operationType = OperationType.valueOf(config.operationType),
-                    isActive = true,
-                    createdAt = Instant.now(),
-                    updatedAt = Instant.now()
-                )
-                categoryRepository.save(category)
+                return@forEach
             }
+            val category = ItemCategory(
+                code = config.code,
+                name = config.name,
+                description = config.description,
+                type = CategoryType.SYSTEM_MANAGED,
+                operationType = OperationType.valueOf(config.operationType),
+                isActive = true,
+                createdAt = Instant.now(),
+                updatedAt = Instant.now()
+            )
+            categoryRepository.save(category)
         }
     }
 

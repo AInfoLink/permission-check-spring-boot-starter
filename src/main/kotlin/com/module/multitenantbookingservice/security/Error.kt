@@ -40,3 +40,11 @@ val SystemManagedCategoryDeletionDenied = AppDomainException(
 
 // 404 Not Found - ItemCategory resources
 val ItemCategoryNotFound = AppDomainException("ItemCategoryNotFound", statusCode = HttpStatus.NOT_FOUND)
+
+// 404 Not Found - Order resources
+val OrderNotFound = AppDomainException("OrderNotFound", statusCode = HttpStatus.NOT_FOUND)
+val OrderItemNotFound = AppDomainException("OrderItemNotFound", statusCode = HttpStatus.NOT_FOUND)
+val OrderIdentityNotFound = AppDomainException("OrderIdentityNotFound", statusCode = HttpStatus.NOT_FOUND)
+
+// 409 Conflict - Order resources already exist
+val OrderIdentityAlreadyExists = AppDomainException("OrderIdentityAlreadyExists", statusCode = HttpStatus.CONFLICT)
