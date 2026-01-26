@@ -6,10 +6,12 @@ data "postgresql_schemas" "tenant_schemas" {
 
 
 locals {
+  # if tenant == "", use all schemas except public, else use the specified tenant
+  tenant_schemas = var.tenant == "" ? [for s in data.postgresql_schemas.tenant_schemas.schemas : s if s != "public" ] : [var.tenant]
+
   file_mappings = {
-    for schema in data.postgresql_schemas.tenant_schemas.schemas : schema => "schema_diff_${schema}.sql"
+    for schema in local.tenant_schemas : schema => "schema_diff_${schema}.sql"
   }
-  tenant_schemas = [for s in data.postgresql_schemas.tenant_schemas.schemas : s if s != "public" ]
   system_tables = file("${path.module}/hcl/system-tables.hcl")
   tenant_tables = file("${path.module}/hcl/tenant-tables.hcl")
   tables_sha = sha256("${local.system_tables}${local.tenant_tables}")

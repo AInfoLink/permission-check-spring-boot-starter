@@ -23,7 +23,14 @@ variable "db_port" {
 variable "db_name" {
     type        = string
     description = "The database name"
+}
 
+
+
+variable "tenant" {
+    type        = string
+    description = "The ID of the tenant"
+    default = ""
 }
 
 locals {
