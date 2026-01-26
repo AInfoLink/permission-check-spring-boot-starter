@@ -3,6 +3,7 @@ package com.module.multitenantbookingservice.core.service
 import com.module.multitenantbookingservice.core.config.ItemCategoryConfig
 import com.module.multitenantbookingservice.core.models.CategoryType
 import com.module.multitenantbookingservice.core.models.ItemCategory
+import com.module.multitenantbookingservice.core.models.OperationType
 import com.module.multitenantbookingservice.core.repository.ItemCategoryRepository
 import com.module.multitenantbookingservice.security.ItemCategoryAlreadyExists
 import com.module.multitenantbookingservice.security.ItemCategoryNotFound
@@ -11,6 +12,7 @@ import com.module.multitenantbookingservice.security.SystemManagedCategoryModifi
 import jakarta.annotation.PostConstruct
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.Instant
 import java.util.*
 
 @Service
@@ -24,7 +26,7 @@ class ItemCategoryService(
      */
     @Transactional
     @PostConstruct
-    fun init(vararg args: String?) {
+    fun init() {
         // 確保 categoryConfig 已經載入完成
         categoryConfig.loadConfig()
         initializeSystemManagedCategories()
@@ -39,6 +41,7 @@ class ItemCategoryService(
                     name = config.name,
                     description = config.description,
                     type = CategoryType.SYSTEM_MANAGED,
+                    operationType = OperationType.valueOf(config.operationType),
                     isActive = true,
                     createdAt = java.time.Instant.now(),
                     updatedAt = java.time.Instant.now()
@@ -77,6 +80,7 @@ class ItemCategoryService(
         code: String,
         name: String,
         description: String? = null,
+        operationType: OperationType = OperationType.CHARGE
     ): ItemCategory {
         if (categoryRepository.existsByCode(code)) {
             throw ItemCategoryAlreadyExists.withDetails("Category code '$code' already exists")
@@ -87,9 +91,10 @@ class ItemCategoryService(
             name = name,
             description = description,
             type = CategoryType.USER_MANAGED,
+            operationType = operationType,
             isActive = true,
-            createdAt = java.time.Instant.now(),
-            updatedAt = java.time.Instant.now()
+            createdAt = Instant.now(),
+            updatedAt = Instant.now()
         )
         return categoryRepository.save(category)
     }

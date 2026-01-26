@@ -1,4 +1,4 @@
-package com.app.security.repository.model
+package com.module.multitenantbookingservice.security.repository.model
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import jakarta.persistence.*

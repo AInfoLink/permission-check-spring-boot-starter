@@ -1,6 +1,6 @@
 package com.module.multitenantbookingservice.security.config
 
-import com.app.security.repository.model.Role
+import com.module.multitenantbookingservice.security.repository.model.Role
 import com.module.multitenantbookingservice.security.web.filter.UserJwtAuthenticationFilter
 import com.module.multitenantbookingservice.security.service.UserJwtService
 import org.springframework.beans.factory.annotation.Qualifier

@@ -1,6 +1,6 @@
 package com.module.multitenantbookingservice.core.repository
 
-import com.app.security.repository.model.User
+import com.module.multitenantbookingservice.security.repository.model.User
 import com.module.multitenantbookingservice.core.models.UserProfile
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query

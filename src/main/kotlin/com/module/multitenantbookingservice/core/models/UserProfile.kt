@@ -1,6 +1,6 @@
 package com.module.multitenantbookingservice.core.models
 
-import com.app.security.repository.model.User
+import com.module.multitenantbookingservice.security.repository.model.User
 import com.module.multitenantbookingservice.security.permission.HasResourceOwner
 import jakarta.persistence.*
 import java.time.LocalDateTime

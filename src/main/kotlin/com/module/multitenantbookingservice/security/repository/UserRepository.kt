@@ -1,6 +1,6 @@
 package com.module.multitenantbookingservice.security.repository
 
-import com.app.security.repository.model.User
+import com.module.multitenantbookingservice.security.repository.model.User
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository

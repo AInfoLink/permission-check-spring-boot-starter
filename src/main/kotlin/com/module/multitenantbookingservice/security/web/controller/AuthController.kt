@@ -1,6 +1,6 @@
 package com.module.multitenantbookingservice.security.web.controller
 
-import com.app.security.repository.model.User
+import com.module.multitenantbookingservice.security.repository.model.User
 import com.module.multitenantbookingservice.security.service.AuthService
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.http.HttpStatus
