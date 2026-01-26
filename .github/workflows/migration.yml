@@ -1,0 +1,235 @@
+name: Database Migration
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'terraform/**'
+      - 'src/main/resources/hcl/**'
+      - 'terraform/hcl/**'
+      - '.env'
+      - 'Makefile'
+  workflow_dispatch:
+    inputs:
+      tenant:
+        description: 'Tenant name for migration'
+        required: false
+        default: ''
+      force_apply:
+        description: 'Force apply migrations'
+        required: false
+        default: false
+        type: boolean
+
+# No hardcoded env vars - using dynamic creation from secret
+jobs:
+  migration:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ap-east-2
+
+    - name: Install Atlas CLI and make
+      run: |
+        sudo apt-get update && sudo apt-get install -y make
+        curl -sSf https://atlasgo.sh | sh
+        echo "$HOME/.atlas/bin" >> $GITHUB_PATH
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.6.0
+
+    - name: Create environment files
+      run: |
+        # Create .env file for Atlas
+        cat > .env << EOF
+        DB_HOST=${{ secrets.DB_HOST }}
+        DB_USER=${{ secrets.DB_USER }}
+        DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+        DB_NAME=${{ secrets.DB_NAME }}
+        DB_PORT=${{ secrets.DB_PORT || 5432 }}
+        TENANT=${{ github.event.inputs.tenant || 'default' }}
+        EOF
+
+        # Create dynamic tfvars file for Terraform (using secrets instead of hardcoded values)
+        cat > terraform/terraform.tfvars << EOF
+        db_host = "${{ secrets.DB_HOST }}"
+        db_user = "${{ secrets.DB_USER }}"
+        db_password = "${{ secrets.DB_PASSWORD }}"
+        db_name = "${{ secrets.DB_NAME }}"
+        db_port = ${{ secrets.DB_PORT || 5432 }}
+        EOF
+
+    - name: Terraform Init
+      working-directory: terraform
+      run: terraform init
+
+    - name: Terraform Plan
+      working-directory: terraform
+      run: terraform plan -var-file="terraform.tfvars"
+
+    - name: Terraform Apply
+      working-directory: terraform
+      run: terraform apply -var-file="terraform.tfvars" -auto-approve
+
+    - name: Setup Docker for Atlas dev-url
+      run: |
+        docker run -d --name postgres-dev \
+          -e POSTGRES_PASSWORD=dev \
+          -e POSTGRES_DB=dev \
+          -p 5433:5432 \
+          postgres:17
+
+        # Wait for postgres to be ready
+        sleep 10
+
+    - name: Download existing migrations from S3
+      run: make atlas/sync/download
+      continue-on-error: true
+
+    - name: Apply tenant migrations
+      if: github.event.inputs.tenant != '' || github.event.inputs.force_apply == 'true'
+      run: |
+        if [ -f .env ]; then
+          source .env
+          make atlas/apply/tenant
+        fi
+
+    - name: Check generated SQL files
+      run: |
+        echo "Checking for generated schema changes..."
+        if [ -f "terraform/diffs/consolidated_schema_changes.sql" ]; then
+          echo "Found consolidated schema changes file:"
+          echo "========================================"
+          cat terraform/diffs/consolidated_schema_changes.sql
+          echo "========================================"
+
+          # Check if there are actual changes (not just BEGIN/COMMIT)
+          if grep -q "CREATE\|ALTER\|DROP\|INSERT\|UPDATE\|DELETE" terraform/diffs/consolidated_schema_changes.sql; then
+            echo "✅ Schema changes detected in SQL file"
+          else
+            echo "ℹ️  No schema changes detected (empty migration)"
+          fi
+        else
+          echo "❌ No consolidated schema changes file found"
+        fi
+
+        # List all files in terraform/diffs for debugging
+        echo ""
+        echo "Files in terraform/diffs/:"
+        ls -la terraform/diffs/ || echo "No diffs directory found"
+
+    - name: Generate migration artifacts
+      run: |
+        # Create migrations directory structure
+        mkdir -p artifacts/migrations
+        mkdir -p artifacts/terraform
+        mkdir -p artifacts/diffs
+
+        # Copy migration files
+        if [ -d "migrations" ]; then
+          cp -r migrations/* artifacts/migrations/
+        fi
+
+        # Copy terraform state and plans
+        if [ -f "terraform/terraform.tfstate" ]; then
+          cp terraform/terraform.tfstate artifacts/terraform/
+        fi
+
+        # Copy schema files
+        if [ -d "terraform/hcl" ]; then
+          cp -r terraform/hcl artifacts/
+        fi
+
+        # Copy diffs (including consolidated_schema_changes.sql)
+        if [ -d "terraform/diffs" ]; then
+          cp -r terraform/diffs/* artifacts/diffs/
+        fi
+
+        # Ensure the consolidated SQL file is captured
+        if [ -f "terraform/diffs/consolidated_schema_changes.sql" ]; then
+          echo "✅ Consolidated SQL file copied to artifacts"
+        else
+          echo "⚠️  No consolidated SQL file found to copy"
+        fi
+
+        # Create migration summary
+        cat > artifacts/migration-summary.txt << EOF
+        Migration Summary
+        =================
+        Timestamp: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+        Git Commit: ${{ github.sha }}
+        Tenant: ${{ github.event.inputs.tenant || 'default' }}
+        Trigger: ${{ github.event_name }}
+        Branch: ${{ github.ref_name }}
+
+        Files included:
+        $(find artifacts -type f | sort)
+        EOF
+
+    - name: Upload migration artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: migration-files-${{ github.run_number }}
+        path: artifacts/
+        retention-days: 30
+
+    - name: Upload migrations to S3
+      run: make atlas/sync/upload
+      continue-on-error: true
+
+    - name: Generate migration report
+      run: |
+        echo "## Migration Report" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Trigger:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        # Check for the consolidated SQL file generated by Terraform
+        if [ -f "terraform/diffs/consolidated_schema_changes.sql" ]; then
+          # Check if there are actual changes (not just BEGIN/COMMIT)
+          if grep -q "CREATE\|ALTER\|DROP\|INSERT\|UPDATE\|DELETE" terraform/diffs/consolidated_schema_changes.sql; then
+            echo "### ✅ Schema Changes Detected" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo '```sql' >> $GITHUB_STEP_SUMMARY
+            cat terraform/diffs/consolidated_schema_changes.sql >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ℹ️ No Schema Changes Required" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "All tenant schemas are already up to date." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Generated SQL:**" >> $GITHUB_STEP_SUMMARY
+            echo '```sql' >> $GITHUB_STEP_SUMMARY
+            cat terraform/diffs/consolidated_schema_changes.sql >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+        else
+          echo "### ❌ No SQL Migration File Generated" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Terraform did not generate the expected consolidated_schema_changes.sql file." >> $GITHUB_STEP_SUMMARY
+        fi
+
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Artifacts Generated" >> $GITHUB_STEP_SUMMARY
+        echo "- **SQL Migration File**: \`terraform/diffs/consolidated_schema_changes.sql\`" >> $GITHUB_STEP_SUMMARY
+        echo "- Migration files uploaded to S3" >> $GITHUB_STEP_SUMMARY
+        echo "- Migration artifacts available for download" >> $GITHUB_STEP_SUMMARY
+
+    - name: Cleanup
+      if: always()
+      run: |
+        docker stop postgres-dev || true
+        docker rm postgres-dev || true
+        rm -f .env terraform/terraform.tfvars || true
