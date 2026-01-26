@@ -19,9 +19,4 @@ data class VenueScheduleConfig(
 
     @Column(name = "is_schedule_active")
     var isActive: Boolean = true,
-
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "annotations")
-    val annotations: MutableMap<String, Any> = mutableMapOf()
-) {
-}
+)
