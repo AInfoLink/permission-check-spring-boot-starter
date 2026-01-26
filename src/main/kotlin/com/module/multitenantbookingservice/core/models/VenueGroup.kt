@@ -13,8 +13,8 @@ import java.util.*
 class VenueGroup(
     @Id
     val id: UUID = UUID.randomUUID(),
-    val name: String,
-    val description: String,
+    var name: String,
+    var description: String,
     var isDefault: Boolean,
 
     @JdbcTypeCode(SqlTypes.JSON)

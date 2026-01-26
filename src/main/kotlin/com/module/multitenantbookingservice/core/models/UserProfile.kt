@@ -41,7 +41,7 @@ class UserProfile(
         joinColumns = [JoinColumn(name = "user_profile_id")]
     )
     @Column(name = "role")
-    val tenantRoles: MutableSet<String> = mutableSetOf(),
+    var tenantRoles: MutableSet<String> = mutableSetOf(),
 
     @Column(name = "joined_at", nullable = false)
     val joinedAt: LocalDateTime = LocalDateTime.now(),

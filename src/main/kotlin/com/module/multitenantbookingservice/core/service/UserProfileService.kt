@@ -13,31 +13,48 @@ import kotlin.jvm.optionals.getOrNull
 
 data class UserProfileCreation(
     val tenantRoles: MutableSet<String> = mutableSetOf(),
-    val walletBalance: Int = 0
+    val walletBalance: Int = 0,
+    val isActive: Boolean = true
 )
 
+data class UserProfileUpdate(
+    val tenantRoles: MutableSet<String>? = null,
+    val walletBalance: Int? = null,
+    val isActive: Boolean? = null
+)
+
+interface UserProfileService {
+    fun createUserProfile(userId: UUID, profile: UserProfileCreation): UserProfile
+    fun getUserProfile(userId: UUID): UserProfile
+    fun updateUserProfile(userId: UUID, update: UserProfileUpdate): UserProfile
+    fun deleteUserProfile(userId: UUID)
+}
 
 @Service
 @Transactional
-class UserProfileService(
+class DefaultUserProfileService(
     private val userProfileRepository: UserProfileRepository,
     private val userRepository: UserRepository
-) {
+): UserProfileService {
 
     /**
      * 創建用戶檔案，使用數據庫層級參照完整性
      */
-    fun createUserProfile(userId: UUID, profile: UserProfileCreation): UserProfile {
+    @Transactional
+    override fun createUserProfile(userId: UUID, profile: UserProfileCreation): UserProfile {
         // 獲取 User 實體，如果不存在會拋出異常
         val user = userRepository.findById(userId).getOrNull() ?: throw UserNotFound
 
-        // 檢查是否已經存在該租戶的用戶檔案
-        userProfileRepository.findByUser(user).getOrNull() ?: throw UserProfileAlreadyExists
-
+        // 檢查是否已經存在該用戶的檔案
+        userProfileRepository.findByUser(user).getOrNull()?.let {
+            throw UserProfileAlreadyExists
+        }
 
         val userProfile = UserProfile(
             user = user,
             tenantRoles = profile.tenantRoles,
+            walletBalance = profile.walletBalance,
+            isActive = profile.isActive
         )
 
         return userProfileRepository.save(userProfile)
@@ -47,15 +64,32 @@ class UserProfileService(
      * 查詢用戶檔案，由於使用外鍵約束，不再需要應用層驗證
      */
     @Transactional(readOnly = true)
-    fun getUserProfile(userId: UUID): UserProfile {
+    override fun getUserProfile(userId: UUID): UserProfile {
         return userProfileRepository.findByUserId(userId).getOrNull() ?: throw UserProfileNotCreated
+    }
+
+    /**
+     * 更新用戶檔案信息
+     */
+    @Transactional
+    override fun updateUserProfile(userId: UUID, update: UserProfileUpdate): UserProfile {
+        val userProfile = userProfileRepository.findByUserId(userId).getOrNull() ?: throw UserProfileNotCreated
+
+        update.tenantRoles?.let { newRoles ->
+            userProfile.tenantRoles.clear()
+            userProfile.tenantRoles.addAll(newRoles)
+        }
+        update.walletBalance?.let { userProfile.walletBalance = it }
+        update.isActive?.let { userProfile.isActive = it }
+
+        return userProfileRepository.save(userProfile)
     }
 
     /**
      * 刪除用戶檔案（保留全域用戶）
      */
     @Transactional
-    fun deleteUserProfile(userId: UUID) {
+    override fun deleteUserProfile(userId: UUID) {
         val userProfile = userProfileRepository.findByUserId(userId).getOrNull() ?: return
         userProfileRepository.delete(userProfile)
     }

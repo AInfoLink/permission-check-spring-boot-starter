@@ -20,6 +20,17 @@ data class VenueCreation(
     val scheduleAnnotations: MutableMap<String, Any> = mutableMapOf()
 )
 
+data class VenueUpdate(
+    val name: String? = null,
+    val description: String? = null,
+    val location: String? = null,
+    val venueGroupId: UUID? = null,
+    val bookingSlotType: BookingSlotType? = null,
+    val isScheduleActive: Boolean? = null,
+    val annotations: MutableMap<String, Any>? = null,
+    val scheduleAnnotations: MutableMap<String, Any>? = null
+)
+
 data class VenueGroupCreation(
     val name: String,
     val description: String,
@@ -27,18 +38,45 @@ data class VenueGroupCreation(
     val annotations: MutableMap<String, Any> = mutableMapOf()
 )
 
+data class VenueGroupUpdate(
+    val name: String? = null,
+    val description: String? = null,
+    val isDefault: Boolean? = null,
+    val annotations: MutableMap<String, Any> = mutableMapOf()
+)
+
+interface VenueService {
+    // VenueGroup operations
+    fun createVenueGroup(group: VenueGroupCreation): VenueGroup
+    fun getVenueGroup(venueGroupId: UUID): VenueGroup
+    fun getVenueGroupByName(name: String): VenueGroup
+    fun getDefaultVenueGroup(): VenueGroup
+    fun getAllVenueGroups(): List<VenueGroup>
+    fun updateVenueGroup(venueGroupId: UUID, update: VenueGroupUpdate): VenueGroup
+    fun deleteVenueGroup(venueGroupId: UUID)
+
+    // Venue operations
+    fun createVenue(venue: VenueCreation): Venue
+    fun getVenue(venueId: UUID): Venue
+    fun getVenueByName(name: String): Venue
+    fun getVenuesByGroup(venueGroupId: UUID): List<Venue>
+    fun getAllVenues(): List<Venue>
+    fun updateVenue(venueId: UUID, update: VenueUpdate): Venue
+    fun deleteVenue(venueId: UUID)
+}
+
 @Service
 @Transactional
-class VenueService(
+class DefaultVenueService(
     private val venueRepository: VenueRepository,
     private val venueGroupRepository: VenueGroupRepository
-) {
+): VenueService {
 
     /**
      * 創建場地組，確保名稱的唯一性
      */
     @Transactional
-    fun createVenueGroup(group: VenueGroupCreation): VenueGroup {
+    override fun createVenueGroup(group: VenueGroupCreation): VenueGroup {
         // 檢查是否已經存在相同名稱的場地組
         venueGroupRepository.findByName(group.name).getOrNull()?.let {
             throw VenueGroupAlreadyExists
@@ -58,7 +96,7 @@ class VenueService(
      * 查詢場地組
      */
     @Transactional(readOnly = true)
-    fun getVenueGroup(venueGroupId: UUID): VenueGroup {
+    override fun getVenueGroup(venueGroupId: UUID): VenueGroup {
         return venueGroupRepository.findById(venueGroupId).getOrNull() ?: throw VenueGroupNotFound
     }
 
@@ -66,7 +104,7 @@ class VenueService(
      * 根據名稱查詢場地組
      */
     @Transactional(readOnly = true)
-    fun getVenueGroupByName(name: String): VenueGroup {
+    override fun getVenueGroupByName(name: String): VenueGroup {
         return venueGroupRepository.findByName(name).getOrNull() ?: throw VenueGroupNotFound
     }
 
@@ -74,7 +112,7 @@ class VenueService(
      * 查詢預設場地組
      */
     @Transactional(readOnly = true)
-    fun getDefaultVenueGroup(): VenueGroup {
+    override fun getDefaultVenueGroup(): VenueGroup {
         return venueGroupRepository.findByIsDefaultTrue().getOrNull() ?: throw VenueGroupNotFound
     }
 
@@ -82,15 +120,30 @@ class VenueService(
      * 查詢所有場地組
      */
     @Transactional(readOnly = true)
-    fun getAllVenueGroups(): List<VenueGroup> {
+    override fun getAllVenueGroups(): List<VenueGroup> {
         return venueGroupRepository.findAll()
+    }
+
+    /**
+     * 更新場地組信息
+     */
+    @Transactional
+    override fun updateVenueGroup(venueGroupId: UUID, update: VenueGroupUpdate): VenueGroup {
+        val venueGroup = venueGroupRepository.findById(venueGroupId).getOrNull() ?: throw VenueGroupNotFound
+
+        update.name?.let { venueGroup.name = it }
+        update.description?.let { venueGroup.description = it }
+        update.isDefault?.let { venueGroup.isDefault = it }
+        update.annotations.let { venueGroup.annotations.putAll(it) }
+
+        return venueGroupRepository.save(venueGroup)
     }
 
     /**
      * 刪除場地組（會一併刪除關聯的場地）
      */
     @Transactional
-    fun deleteVenueGroup(venueGroupId: UUID) {
+    override fun deleteVenueGroup(venueGroupId: UUID) {
         val venueGroup = venueGroupRepository.findById(venueGroupId).getOrNull() ?: return
         venueGroupRepository.delete(venueGroup)
     }
@@ -98,7 +151,8 @@ class VenueService(
     /**
      * 創建場地，使用數據庫層級參照完整性
      */
-    fun createVenue(venue: VenueCreation): Venue {
+    @Transactional
+    override fun createVenue(venue: VenueCreation): Venue {
         // 獲取場地組實體，如果不存在會拋出異常
         val venueGroup = venueGroupRepository.findById(venue.venueGroupId).getOrNull()
             ?: throw VenueGroupNotFound
@@ -130,7 +184,7 @@ class VenueService(
      * 查詢場地
      */
     @Transactional(readOnly = true)
-    fun getVenue(venueId: UUID): Venue {
+    override fun getVenue(venueId: UUID): Venue {
         return venueRepository.findById(venueId).getOrNull() ?: throw VenueNotFound
     }
 
@@ -138,7 +192,7 @@ class VenueService(
      * 根據名稱查詢場地
      */
     @Transactional(readOnly = true)
-    fun getVenueByName(name: String): Venue {
+    override fun getVenueByName(name: String): Venue {
         return venueRepository.findByName(name).getOrNull() ?: throw VenueNotFound
     }
 
@@ -146,7 +200,7 @@ class VenueService(
      * 根據場地組查詢所有場地
      */
     @Transactional(readOnly = true)
-    fun getVenuesByGroup(venueGroupId: UUID): List<Venue> {
+    override fun getVenuesByGroup(venueGroupId: UUID): List<Venue> {
         return venueRepository.findByVenueGroupId(venueGroupId)
     }
 
@@ -154,7 +208,7 @@ class VenueService(
      * 查詢所有場地
      */
     @Transactional(readOnly = true)
-    fun getAllVenues(): List<Venue> {
+    override fun getAllVenues(): List<Venue> {
         return venueRepository.findAll()
     }
 
@@ -162,12 +216,24 @@ class VenueService(
      * 更新場地信息
      */
     @Transactional
-    fun updateVenue(venueId: UUID, name: String?, description: String?, location: String?): Venue {
+    override fun updateVenue(venueId: UUID, update: VenueUpdate): Venue {
         val venue = venueRepository.findById(venueId).getOrNull() ?: throw VenueNotFound
 
-        name?.let { venue.name = it }
-        description?.let { venue.description = it }
-        location?.let { venue.location = it }
+        update.name?.let { venue.name = it }
+        update.description?.let { venue.description = it }
+        update.location?.let { venue.location = it }
+
+        update.venueGroupId?.let { newVenueGroupId ->
+            val newVenueGroup = venueGroupRepository.findById(newVenueGroupId).getOrNull()
+                ?: throw VenueGroupNotFound
+            venue.venueGroup = newVenueGroup
+        }
+
+        update.bookingSlotType?.let { venue.scheduleConfig.bookingSlotType = it }
+        update.isScheduleActive?.let { venue.scheduleConfig.isActive = it }
+
+        update.annotations?.let { venue.annotations.putAll(it) }
+        update.scheduleAnnotations?.let { venue.scheduleConfig.annotations.putAll(it) }
 
         return venueRepository.save(venue)
     }
@@ -202,7 +268,7 @@ class VenueService(
      * 刪除場地
      */
     @Transactional
-    fun deleteVenue(venueId: UUID) {
+    override fun deleteVenue(venueId: UUID) {
         val venue = venueRepository.findById(venueId).getOrNull() ?: return
         venueRepository.delete(venue)
     }
