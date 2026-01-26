@@ -26,3 +26,17 @@ val VenueGroupNotFound = AppDomainException("VenueGroupNotFound", statusCode = H
 val UserProfileAlreadyExists = AppDomainException("UserProfileAlreadyExists", statusCode = HttpStatus.CONFLICT)
 val VenueAlreadyExists = AppDomainException("VenueAlreadyExists", statusCode = HttpStatus.CONFLICT)
 val VenueGroupAlreadyExists = AppDomainException("VenueGroupAlreadyExists", statusCode = HttpStatus.CONFLICT)
+val ItemCategoryAlreadyExists = AppDomainException("ItemCategoryAlreadyExists", statusCode = HttpStatus.CONFLICT)
+
+// 403 Forbidden - Operation not allowed
+val SystemManagedCategoryModificationDenied = AppDomainException(
+    "SystemManagedCategoryModificationDenied",
+    statusCode = HttpStatus.FORBIDDEN
+)
+val SystemManagedCategoryDeletionDenied = AppDomainException(
+    "SystemManagedCategoryDeletionDenied",
+    statusCode = HttpStatus.FORBIDDEN
+)
+
+// 404 Not Found - ItemCategory resources
+val ItemCategoryNotFound = AppDomainException("ItemCategoryNotFound", statusCode = HttpStatus.NOT_FOUND)

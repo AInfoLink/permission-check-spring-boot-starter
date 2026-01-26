@@ -6,7 +6,6 @@ import org.hibernate.annotations.UpdateTimestamp
 import java.time.Instant
 import java.util.*
 
-
 @Entity
 @Table(name = "order_items")
 class OrderItem(
@@ -19,6 +18,10 @@ class OrderItem(
 
     @Column(name = "amount", nullable = false)
     val amount: Int,
+
+    @ManyToOne
+    @JoinColumn(name = "category_id", nullable = false)
+    val category: ItemCategory,
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false)
