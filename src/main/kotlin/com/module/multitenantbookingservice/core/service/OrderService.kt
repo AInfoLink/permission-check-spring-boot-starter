@@ -33,17 +33,10 @@ data class OrderUpdate(
 )
 
 interface OrderService {
-    // OrderIdentity operations
     fun createOrderIdentity(identity: OrderIdentityCreation): OrderIdentity
-    fun getOrderIdentity(identityId: UUID): OrderIdentity
-    fun getOrderIdentityByEmail(email: String): OrderIdentity
-    fun getOrderIdentitiesByUser(userId: UUID): List<OrderIdentity>
-    fun getOrderIdentitiesByType(type: IdentityType): List<OrderIdentity>
-    fun findOrCreateOrderIdentity(email: String, name: String, type: IdentityType, userId: UUID? = null): OrderIdentity
-
     // Order operations
     fun createOrder(order: OrderCreation): Order
-    fun getOrder(orderId: UUID): Order
+    fun getOrderById(orderId: UUID): Order
     fun getOrdersByIdentity(identityId: UUID): List<Order>
     fun getOrdersByEmail(email: String): List<Order>
     fun getOrdersByPaymentStatus(status: PaymentStatus): List<Order>
@@ -87,49 +80,6 @@ class DefaultOrderService(
     }
 
     /**
-     * 查詢訂單身份
-     */
-    @Transactional(readOnly = true)
-    override fun getOrderIdentity(identityId: UUID): OrderIdentity {
-        return orderIdentityRepository.findById(identityId).getOrNull() ?: throw OrderIdentityNotFound
-    }
-
-    /**
-     * 根據 email 查詢訂單身份
-     */
-    @Transactional(readOnly = true)
-    override fun getOrderIdentityByEmail(email: String): OrderIdentity {
-        return orderIdentityRepository.findByEmail(email).getOrNull() ?: throw OrderIdentityNotFound
-    }
-
-    /**
-     * 根據用戶 ID 查詢所有相關訂單身份
-     */
-    @Transactional(readOnly = true)
-    override fun getOrderIdentitiesByUser(userId: UUID): List<OrderIdentity> {
-        val user = userRepository.findById(userId).getOrNull() ?: throw UserNotFound
-        return orderIdentityRepository.findByUser(user)
-    }
-
-    /**
-     * 根據身份類型查詢訂單身份
-     */
-    @Transactional(readOnly = true)
-    override fun getOrderIdentitiesByType(type: IdentityType): List<OrderIdentity> {
-        return orderIdentityRepository.findByType(type)
-    }
-
-    /**
-     * 查找或創建訂單身份，用於確保唯一性
-     */
-    @Transactional
-    override fun findOrCreateOrderIdentity(email: String, name: String, type: IdentityType, userId: UUID?): OrderIdentity {
-        // 首先嘗試查找現有的身份
-        return orderIdentityRepository.findByEmailAndType(email, type).getOrNull()
-            ?: createOrderIdentity(OrderIdentityCreation(type, email, name, userId))
-    }
-
-    /**
      * 創建訂單
      */
     @Transactional
@@ -153,7 +103,7 @@ class DefaultOrderService(
      * 查詢訂單
      */
     @Transactional(readOnly = true)
-    override fun getOrder(orderId: UUID): Order {
+    override fun getOrderById(orderId: UUID): Order {
         return orderRepository.findById(orderId).getOrNull() ?: throw OrderNotFound
     }
 
@@ -207,14 +157,14 @@ class DefaultOrderService(
         val order = orderRepository.findById(orderId).getOrNull() ?: throw OrderNotFound
 
         update.description?.let {
-            // Note: Order.description is val, so we would need to create a new Order or change the model
-            // For now, we'll skip description updates as it's immutable
+            order.description = it
         }
         update.amount?.let {
-            // Note: Order.amount is val, so we would need to create a new Order or change the model
-            // For now, we'll skip amount updates as it's immutable
+            order.amount = it
         }
-        update.paymentStatus?.let { order.paymentStatus = it }
+        update.paymentStatus?.let {
+            order.paymentStatus = it
+        }
 
         return orderRepository.save(order)
     }

@@ -2,7 +2,6 @@ package com.module.multitenantbookingservice.core.web.controller
 
 import com.module.multitenantbookingservice.core.models.IdentityType
 import com.module.multitenantbookingservice.core.models.Order
-import com.module.multitenantbookingservice.core.models.OrderIdentity
 import com.module.multitenantbookingservice.core.models.PaymentStatus
 import com.module.multitenantbookingservice.core.service.OrderCreation
 import com.module.multitenantbookingservice.core.service.OrderService
@@ -26,7 +25,7 @@ class OrderController(
 
     @GetMapping("/{orderId}")
     fun getOrder(@PathVariable orderId: UUID): ResponseEntity<Order> {
-        val order = orderService.getOrder(orderId)
+        val order = orderService.getOrderById(orderId)
         return ResponseEntity.ok(order)
     }
 
@@ -85,18 +84,6 @@ class OrderController(
     fun deleteOrder(@PathVariable orderId: UUID): ResponseEntity<Map<String, String>> {
         orderService.deleteOrder(orderId)
         return ResponseEntity.ok(mapOf("message" to "Order deleted successfully"))
-    }
-
-    // Utility endpoint for finding or creating order identity
-    @PostMapping("/identities/find-or-create")
-    fun findOrCreateOrderIdentity(@RequestBody request: FindOrCreateIdentityRequest): ResponseEntity<OrderIdentity> {
-        val identity = orderService.findOrCreateOrderIdentity(
-            request.email,
-            request.name,
-            request.type,
-            request.userId
-        )
-        return ResponseEntity.ok(identity)
     }
 }
 

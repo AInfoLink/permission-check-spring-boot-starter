@@ -58,10 +58,10 @@ class Order(
     val id: UUID = UUID.randomUUID(),
 
     @Column(name = "description", nullable = false, length = 1000)
-    val description: String,
+    var description: String,
 
     @Column(name = "amount", nullable = false)
-    val amount: Int,
+    var amount: Int,
 
     @ManyToOne
     @JoinColumn(name = "order_identity_id", nullable = false)
