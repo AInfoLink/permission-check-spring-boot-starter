@@ -1,9 +1,6 @@
 package com.module.multitenantbookingservice.core.models
 
-import jakarta.persistence.Column
-import jakarta.persistence.Embeddable
-import org.hibernate.annotations.JdbcTypeCode
-import org.hibernate.type.SqlTypes
+import jakarta.persistence.*
 
 
 
@@ -14,9 +11,10 @@ enum class BookingSlotType {
 
 @Embeddable
 data class VenueScheduleConfig(
-    @Column(name = "booking_slot_type")
+    @Enumerated(EnumType.STRING)
+    @Column(name = "booking_slot_type", nullable = false, length = 50)
     var bookingSlotType: BookingSlotType = BookingSlotType.HALF_HOUR,
 
-    @Column(name = "is_schedule_active")
-    var isActive: Boolean = true,
+    @Column(name = "is_schedule_active", nullable = false)
+    var isActive: Boolean = true
 )
