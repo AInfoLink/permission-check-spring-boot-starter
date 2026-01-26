@@ -59,4 +59,12 @@ atlas/apply/tenant:
 	  --url "postgres://$${DB_USER}:$${DB_PASSWORD}@$${DB_HOST}:$${DB_PORT}/$${DB_NAME}" \
 	  --to file://src/main/resources/hcl \
 	  --dev-url "docker://postgres/17/dev" \
-  	  --var tenant=${TENANT}
+  	  --var tenant=${TENANT} \
+  	  --schema ${TENANT},public
+
+terraform/apply:
+
+	source .env && \
+	terraform -chdir=terraform apply -var="database_url=postgres://$${DB_USER}:$${DB_PASSWORD}@$${DB_HOST}:$${DB_PORT}/$${DB_NAME}"
+
+
