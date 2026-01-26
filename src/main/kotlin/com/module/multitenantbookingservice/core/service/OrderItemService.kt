@@ -23,6 +23,19 @@ data class OrderItemUpdate(
     val categoryId: UUID? = null
 )
 
+data class OrderItemAmountUpdate(
+    val amount: Int
+)
+
+data class OrderItemCategoryUpdate(
+    val categoryId: UUID
+)
+
+data class BulkOrderItemUpdate(
+    val itemIds: List<UUID>,
+    val update: OrderItemUpdate
+)
+
 interface OrderItemService {
     fun createOrderItem(item: OrderItemCreation): OrderItem
     fun getOrderItem(itemId: UUID): OrderItem
@@ -30,6 +43,9 @@ interface OrderItemService {
     fun getOrderItemsByCategory(category: ItemCategory): List<OrderItem>
     fun getAllOrderItems(): List<OrderItem>
     fun updateOrderItem(itemId: UUID, update: OrderItemUpdate): OrderItem
+    fun updateOrderItemAmount(itemId: UUID, amountUpdate: OrderItemAmountUpdate): OrderItem
+    fun updateOrderItemCategory(itemId: UUID, categoryUpdate: OrderItemCategoryUpdate): OrderItem
+    fun bulkUpdateOrderItems(bulkUpdate: BulkOrderItemUpdate): List<OrderItem>
     fun deleteOrderItem(itemId: UUID)
     fun validateOrderItemAmount(categoryId: UUID, amount: Int): Boolean
     fun getOrderItemsByCategoryAndAmountRange(categoryId: UUID, minAmount: Int, maxAmount: Int): List<OrderItem>
@@ -51,9 +67,8 @@ class DefaultOrderItemService(
 
         // 驗證金額是否符合分類的操作類型
         if (!category.validateAmountForOperationType(item.amount.toDouble())) {
-            throw AppDomainException(
-                "InvalidAmountForCategory",
-                details = "Amount ${item.amount} is invalid for category ${category.code} with operation type ${category.operationType}"
+            throw InvalidAmountForCategory.withDetails(
+                "Amount ${item.amount} is invalid for category ${category.code} with operation type ${category.operationType}"
             )
         }
 
@@ -107,19 +122,31 @@ class DefaultOrderItemService(
     override fun updateOrderItem(itemId: UUID, update: OrderItemUpdate): OrderItem {
         val orderItem = orderItemRepository.findById(itemId).getOrNull() ?: throw OrderItemNotFound
 
-        // Note: OrderItem properties are val (immutable), so we cannot update them directly
-        // This suggests we might need to recreate the OrderItem or modify the entity design
-        // For now, we'll return the existing item since the properties cannot be changed
+        // 更新描述
+        update.description?.let { orderItem.description = it }
 
-        // If we need to update, we would typically:
-        // 1. Create a new OrderItem with updated values
-        // 2. Replace the old one in any parent entities
-        // 3. Delete the old OrderItem
+        // 更新金額
+        update.amount?.let { newAmount ->
+            orderItem.amount = newAmount
+        }
 
-        // This pattern suggests OrderItems should be immutable once created
-        // which is common for financial/audit systems
+        // 更新分類
+        update.categoryId?.let { newCategoryId ->
+            val newCategory = itemCategoryRepository.findById(newCategoryId).getOrNull()
+                ?: throw ItemCategoryNotFound
+            orderItem.category = newCategory
+        }
 
-        return orderItem
+        // 如果有金額更新，驗證新金額是否符合分類規則
+        if (update.amount != null) {
+            if (!orderItem.category.validateAmountForOperationType(orderItem.amount.toDouble())) {
+                throw InvalidAmountForCategory.withDetails(
+                    "Amount ${orderItem.amount} is invalid for category ${orderItem.category.code} with operation type ${orderItem.category.operationType}"
+                )
+            }
+        }
+
+        return orderItemRepository.save(orderItem)
     }
 
     /**
@@ -147,5 +174,66 @@ class DefaultOrderItemService(
     override fun getOrderItemsByCategoryAndAmountRange(categoryId: UUID, minAmount: Int, maxAmount: Int): List<OrderItem> {
         return orderItemRepository.findByCategoryId(categoryId)
             .filter { it.amount in minAmount..maxAmount }
+    }
+
+    /**
+     * 更新訂單項目金額
+     */
+    @Transactional
+    override fun updateOrderItemAmount(itemId: UUID, amountUpdate: OrderItemAmountUpdate): OrderItem {
+        val orderItem = orderItemRepository.findById(itemId).getOrNull() ?: throw OrderItemNotFound
+
+        // 驗證新金額是否符合分類規則
+        if (!orderItem.category.validateAmountForOperationType(amountUpdate.amount.toDouble())) {
+            throw InvalidAmountForCategory.withDetails(
+                "Amount ${amountUpdate.amount} is invalid for category ${orderItem.category.code} with operation type ${orderItem.category.operationType}"
+            )
+        }
+
+        orderItem.amount = amountUpdate.amount
+        return orderItemRepository.save(orderItem)
+    }
+
+    /**
+     * 更新訂單項目分類
+     */
+    @Transactional
+    override fun updateOrderItemCategory(itemId: UUID, categoryUpdate: OrderItemCategoryUpdate): OrderItem {
+        val orderItem = orderItemRepository.findById(itemId).getOrNull() ?: throw OrderItemNotFound
+        val newCategory = itemCategoryRepository.findById(categoryUpdate.categoryId).getOrNull()
+            ?: throw ItemCategoryNotFound
+
+        // 驗證當前金額是否符合新分類的規則
+        if (!newCategory.validateAmountForOperationType(orderItem.amount.toDouble())) {
+            throw InvalidAmountForCategory.withDetails(
+                "Amount ${orderItem.amount} is invalid for category ${newCategory.code} with operation type ${newCategory.operationType}"
+            )
+        }
+
+        orderItem.category = newCategory
+        return orderItemRepository.save(orderItem)
+    }
+
+    /**
+     * 批量更新訂單項目
+     */
+    @Transactional
+    override fun bulkUpdateOrderItems(bulkUpdate: BulkOrderItemUpdate): List<OrderItem> {
+        val updatedItems = mutableListOf<OrderItem>()
+
+        bulkUpdate.itemIds.forEach { itemId ->
+            try {
+                val updatedItem = updateOrderItem(itemId, bulkUpdate.update)
+                updatedItems.add(updatedItem)
+            } catch (e: Exception) {
+                // 記錄錯誤但繼續處理其他項目
+                // 在實際應用中可能需要更細緻的錯誤處理策略
+                throw BulkUpdatePartialFailure.withDetails(
+                    "Failed to update item $itemId: ${e.message}"
+                )
+            }
+        }
+
+        return updatedItems
     }
 }

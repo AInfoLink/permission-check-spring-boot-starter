@@ -13,7 +13,6 @@ schema "tenant" {
 
 table "item_categories" {
   schema = schema.tenant
-
   column "id" {
     null = false
     type = uuid
