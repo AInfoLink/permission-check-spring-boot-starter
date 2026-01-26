@@ -3,8 +3,6 @@ package com.module.multitenantbookingservice.core.models
 import com.app.security.repository.model.User
 import com.module.multitenantbookingservice.security.permission.HasResourceOwner
 import jakarta.persistence.*
-import org.hibernate.annotations.JdbcTypeCode
-import org.hibernate.type.SqlTypes
 import java.time.LocalDateTime
 import java.util.*
 
@@ -44,13 +42,6 @@ class UserProfile(
     )
     @Column(name = "role")
     val tenantRoles: MutableSet<String> = mutableSetOf(),
-
-    /**
-     * 用戶偏好設定 (JSON 格式)
-     */
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "preferences")
-    val preferences: MutableMap<String, Any> = mutableMapOf(),
 
     @Column(name = "joined_at", nullable = false)
     val joinedAt: LocalDateTime = LocalDateTime.now(),

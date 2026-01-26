@@ -15,7 +15,7 @@ class Venue(
     var description: String,
     var location: String,
     @JdbcTypeCode(SqlTypes.JSON)
-    val annotations: MutableMap<String, String> = mutableMapOf(),
+    val annotations: MutableMap<String, Any> = mutableMapOf(),
     @ManyToOne
     @JoinColumn(name = "venue_group_id")
     var venueGroup: VenueGroup,

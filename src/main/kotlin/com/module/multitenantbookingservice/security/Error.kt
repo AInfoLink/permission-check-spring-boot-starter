@@ -19,10 +19,10 @@ data class AppDomainException(
 // 404 Not Found - Resource not found
 val UserNotFound = AppDomainException("UserNotFound", statusCode = HttpStatus.NOT_FOUND)
 val UserProfileNotCreated = AppDomainException("UserProfileNotCreated", statusCode = HttpStatus.NOT_FOUND)
+val VenueNotFound = AppDomainException("VenueNotFound", statusCode = HttpStatus.NOT_FOUND)
+val VenueGroupNotFound = AppDomainException("VenueGroupNotFound", statusCode = HttpStatus.NOT_FOUND)
 
 // 409 Conflict - Resource already exists
 val UserProfileAlreadyExists = AppDomainException("UserProfileAlreadyExists", statusCode = HttpStatus.CONFLICT)
-
-
-// 400 Bad Request - Invalid request
-val InvalidSlotDuration = AppDomainException("InvalidSlotDuration")
+val VenueAlreadyExists = AppDomainException("VenueAlreadyExists", statusCode = HttpStatus.CONFLICT)
+val VenueGroupAlreadyExists = AppDomainException("VenueGroupAlreadyExists", statusCode = HttpStatus.CONFLICT)

@@ -11,6 +11,12 @@ import org.springframework.transaction.annotation.Transactional
 import java.util.*
 import kotlin.jvm.optionals.getOrNull
 
+data class UserProfileCreation(
+    val tenantRoles: MutableSet<String> = mutableSetOf(),
+    val walletBalance: Int = 0
+)
+
+
 @Service
 @Transactional
 class UserProfileService(
@@ -21,10 +27,7 @@ class UserProfileService(
     /**
      * 創建用戶檔案，使用數據庫層級參照完整性
      */
-    fun createUserProfile(
-        userId: UUID,
-        tenantRoles: Set<String> = emptySet()
-    ): UserProfile {
+    fun createUserProfile(userId: UUID, profile: UserProfileCreation): UserProfile {
         // 獲取 User 實體，如果不存在會拋出異常
         val user = userRepository.findById(userId).getOrNull() ?: throw UserNotFound
 
@@ -34,7 +37,7 @@ class UserProfileService(
 
         val userProfile = UserProfile(
             user = user,
-            tenantRoles = tenantRoles.toMutableSet()
+            tenantRoles = profile.tenantRoles,
         )
 
         return userProfileRepository.save(userProfile)

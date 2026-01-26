@@ -18,7 +18,7 @@ class VenueGroup(
     var isDefault: Boolean,
 
     @JdbcTypeCode(SqlTypes.JSON)
-    val annotations: MutableMap<String, String> = mutableMapOf(),
+    val annotations: MutableMap<String, Any> = mutableMapOf(),
     @OneToMany(mappedBy = "venueGroup")
     val venues: MutableSet<Venue> = mutableSetOf(),
 )
