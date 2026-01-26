@@ -12,7 +12,7 @@ interface ItemCategoryRepository : JpaRepository<ItemCategory, UUID> {
 
     fun findByTypeAndIsActiveTrue(type: CategoryType): List<ItemCategory>
 
-    fun findByIsActiveTrueOrderBySortOrder(): List<ItemCategory>
+    fun findByIsActiveTrue(): List<ItemCategory>
 
     @Query("SELECT c FROM ItemCategory c WHERE c.type = 'SYSTEM_MANAGED' AND c.isActive = true")
     fun findSystemManagedCategories(): List<ItemCategory>

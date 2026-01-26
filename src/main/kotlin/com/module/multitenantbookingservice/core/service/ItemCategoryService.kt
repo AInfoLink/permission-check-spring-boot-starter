@@ -1,5 +1,6 @@
 package com.module.multitenantbookingservice.core.service
 
+import com.module.multitenantbookingservice.core.config.ItemCategoryConfig
 import com.module.multitenantbookingservice.core.models.CategoryType
 import com.module.multitenantbookingservice.core.models.ItemCategory
 import com.module.multitenantbookingservice.core.repository.ItemCategoryRepository
@@ -14,30 +15,9 @@ import java.util.*
 
 @Service
 class ItemCategoryService(
-    private val categoryRepository: ItemCategoryRepository
+    private val categoryRepository: ItemCategoryRepository,
+    private val categoryConfig: ItemCategoryConfig
 ) {
-
-    data class SystemCategoryConfig(
-        val code: String,
-        val name: String,
-        val description: String,
-    )
-
-    companion object {
-        // AWS-style: 系統預設的 Managed Categories
-        private val SYSTEM_MANAGED_CATEGORIES = listOf(
-            SystemCategoryConfig("BOOKING", "預約", "場地預約、活動預約等"),
-            SystemCategoryConfig("RENTAL", "租借", "設備租借、器材租借等"),
-            SystemCategoryConfig("SERVICE", "服務", "各類服務費用"),
-            SystemCategoryConfig("MEMBERSHIP", "會員", "會員費、會員相關費用"),
-            SystemCategoryConfig("TOPUP", "儲值", "錢包儲值、點數購買等"),
-            SystemCategoryConfig("MERCHANDISE", "商品", "實體商品販售"),
-            SystemCategoryConfig("FEE", "費用", "手續費、服務費等"),
-            SystemCategoryConfig("DISCOUNT", "折扣", "各類折扣優惠"),
-            SystemCategoryConfig("REFUND", "退款", "退費、退款等"),
-            SystemCategoryConfig("OTHER", "其他", "其他未分類項目")
-        )
-    }
 
     /**
      * 系統啟動時初始化預設分類
@@ -45,12 +25,14 @@ class ItemCategoryService(
     @Transactional
     @PostConstruct
     fun init(vararg args: String?) {
+        // 確保 categoryConfig 已經載入完成
+        categoryConfig.loadConfig()
         initializeSystemManagedCategories()
     }
 
     @Transactional
     fun initializeSystemManagedCategories() {
-        SYSTEM_MANAGED_CATEGORIES.forEach { config ->
+        categoryConfig.systemManagedCategories.forEach { config ->
             if (!categoryRepository.existsByCode(config.code)) {
                 val category = ItemCategory(
                     code = config.code,
@@ -70,7 +52,7 @@ class ItemCategoryService(
      * 取得所有活躍分類（系統+用戶）
      */
     fun getAllActiveCategories(): List<ItemCategory> {
-        return categoryRepository.findByIsActiveTrueOrderBySortOrder()
+        return categoryRepository.findByIsActiveTrue()
     }
 
     /**
@@ -120,7 +102,6 @@ class ItemCategoryService(
         id: UUID,
         name: String? = null,
         description: String? = null,
-        sortOrder: Int? = null,
         isActive: Boolean? = null
     ): ItemCategory {
         val category = categoryRepository.findById(id)
