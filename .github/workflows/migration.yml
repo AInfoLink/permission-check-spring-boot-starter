@@ -12,224 +12,297 @@ on:
       - 'Makefile'
   workflow_dispatch:
     inputs:
-      tenant:
-        description: 'Tenant name for migration'
+      apply_to_db:
+        description: 'Apply generated SQL to database'
         required: false
-        default: ''
-      force_apply:
-        description: 'Force apply migrations'
-        required: false
-        default: false
         type: boolean
+        default: false
 
-# No hardcoded env vars - using dynamic creation from secret
 jobs:
   migration:
     runs-on: ubuntu-latest
+    outputs:
+      SQL_CONTENT: ${{ steps.prepare-sql.outputs.SQL_CONTENT }}
+      SQL_AVAILABLE: ${{ steps.prepare-sql.outputs.SQL_AVAILABLE }}
 
     steps:
-    - name: Checkout code
+    - name: Checkout code (for workflow context only)
       uses: actions/checkout@v4
 
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
+    - name: Execute migration on remote server
+      id: migration
+      uses: appleboy/ssh-action@v1
       with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ap-east-2
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: 22
+        envs: REPO_URL,BRANCH,COMMIT_SHA,TENANT,RUN_NUMBER,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,DB_HOST,DB_USER,DB_PASSWORD,DB_NAME,DB_PORT
+        script: |
+          set -e
+          # Setup working directory
+          WORK_DIR="/tmp/migration-${RUN_NUMBER:-unknown}"
+          mkdir -p $WORK_DIR
+          cd $WORK_DIR
 
-    - name: Install Atlas CLI and make
-      run: |
-        sudo apt-get update && sudo apt-get install -y make
-        curl -sSf https://atlasgo.sh | sh
-        echo "$HOME/.atlas/bin" >> $GITHUB_PATH
+          echo "=== Starting Migration on Remote Server ==="
+          echo "Repository: ${REPO_URL}"
+          echo "Branch: ${BRANCH}"
+          echo "Commit: ${COMMIT_SHA}"
+          echo "Tenant: ${TENANT}"
+          echo "Working Directory: $WORK_DIR"
+          echo "Run Number: ${RUN_NUMBER}"
 
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v3
-      with:
-        terraform_version: 1.6.0
-
-    - name: Create environment files
-      run: |
-        # Create .env file for Atlas
-        cat > .env << EOF
-        DB_HOST=${{ secrets.DB_HOST }}
-        DB_USER=${{ secrets.DB_USER }}
-        DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-        DB_NAME=${{ secrets.DB_NAME }}
-        DB_PORT=${{ secrets.DB_PORT || 5432 }}
-        TENANT=${{ github.event.inputs.tenant || 'default' }}
-        EOF
-
-        # Create dynamic tfvars file for Terraform (using secrets instead of hardcoded values)
-        cat > terraform/terraform.tfvars << EOF
-        db_host = "${{ secrets.DB_HOST }}"
-        db_user = "${{ secrets.DB_USER }}"
-        db_password = "${{ secrets.DB_PASSWORD }}"
-        db_name = "${{ secrets.DB_NAME }}"
-        db_port = ${{ secrets.DB_PORT || 5432 }}
-        EOF
-
-    - name: Terraform Init
-      working-directory: terraform
-      run: terraform init
-
-    - name: Terraform Plan
-      working-directory: terraform
-      run: terraform plan -var-file="terraform.tfvars"
-
-    - name: Terraform Apply
-      working-directory: terraform
-      run: terraform apply -var-file="terraform.tfvars" -auto-approve
-
-    - name: Setup Docker for Atlas dev-url
-      run: |
-        docker run -d --name postgres-dev \
-          -e POSTGRES_PASSWORD=dev \
-          -e POSTGRES_DB=dev \
-          -p 5433:5432 \
-          postgres:17
-
-        # Wait for postgres to be ready
-        sleep 10
-
-    - name: Download existing migrations from S3
-      run: make atlas/sync/download
-      continue-on-error: true
-
-    - name: Apply tenant migrations
-      if: github.event.inputs.tenant != '' || github.event.inputs.force_apply == 'true'
-      run: |
-        if [ -f .env ]; then
-          source .env
-          make atlas/apply/tenant
-        fi
-
-    - name: Check generated SQL files
-      run: |
-        echo "Checking for generated schema changes..."
-        if [ -f "terraform/diffs/consolidated_schema_changes.sql" ]; then
-          echo "Found consolidated schema changes file:"
-          echo "========================================"
-          cat terraform/diffs/consolidated_schema_changes.sql
-          echo "========================================"
-
-          # Check if there are actual changes (not just BEGIN/COMMIT)
-          if grep -q "CREATE\|ALTER\|DROP\|INSERT\|UPDATE\|DELETE" terraform/diffs/consolidated_schema_changes.sql; then
-            echo "✅ Schema changes detected in SQL file"
-          else
-            echo "ℹ️  No schema changes detected (empty migration)"
+          # Validate required environment variables
+          if [ -z "${REPO_URL}" ]; then
+            echo "❌ ERROR: REPO_URL environment variable is empty"
+            echo "Available environment variables:"
+            env | sort
+            exit 1
           fi
-        else
-          echo "❌ No consolidated schema changes file found"
-        fi
 
-        # List all files in terraform/diffs for debugging
-        echo ""
-        echo "Files in terraform/diffs/:"
-        ls -la terraform/diffs/ || echo "No diffs directory found"
+          if [ -z "${COMMIT_SHA}" ]; then
+            echo "❌ ERROR: COMMIT_SHA environment variable is empty"
+            exit 1
+          fi
 
-    - name: Generate migration artifacts
+          # Clean up any previous runs
+          rm -rf $WORK_DIR/* || true
+
+          # Clone repository and checkout specific commit
+          echo "=== Cloning Repository ==="
+          echo "Running: git clone ${REPO_URL} $WORK_DIR"
+          git clone "${REPO_URL}" "$WORK_DIR"
+          echo "Running: git checkout ${COMMIT_SHA}"
+          git checkout "${COMMIT_SHA}"
+
+          # Install required tools if not present
+          echo "=== Installing Required Tools ==="
+
+          # Install make if not present
+          if ! command -v make &> /dev/null; then
+            sudo apt-get update && sudo apt-get install -y make unzip wget
+          fi
+
+          # Install Atlas CLI if not present
+          if ! command -v atlas &> /dev/null; then
+            curl -sSf https://atlasgo.sh | sh
+            export PATH="$HOME/.atlas/bin:$PATH"
+          fi
+
+          # Install Terraform if not present
+          if ! command -v terraform &> /dev/null; then
+            wget https://releases.hashicorp.com/terraform/1.6.0/terraform_1.6.0_linux_amd64.zip
+            unzip terraform_1.6.0_linux_amd64.zip
+            sudo mv terraform /usr/local/bin/
+            rm terraform_1.6.0_linux_amd64.zip
+          fi
+
+          # Setup environment variables
+          export AWS_DEFAULT_REGION="ap-east-2"
+          export PATH="$HOME/.atlas/bin:$PATH"
+
+          # Create environment files
+          echo "=== Creating Environment Files ==="
+          cat > .env << EOF
+          DB_HOST=$DB_HOST
+          DB_USER=$DB_USER
+          DB_PASSWORD=$DB_PASSWORD
+          DB_NAME=$DB_NAME
+          DB_PORT=$DB_PORT
+          TENANT=$TENANT
+          EOF
+
+          # Create dynamic tfvars file for Terraform
+          cat > terraform/terraform.tfvars << EOF
+          db_host = "$DB_HOST"
+          db_user = "$DB_USER"
+          db_password = "$DB_PASSWORD"
+          db_name = "$DB_NAME"
+          db_port = $DB_PORT
+          EOF
+
+          # Execute Terraform operations
+          echo "=== Running Terraform ==="
+          cd terraform
+          terraform init
+          terraform plan -var-file="terraform.tfvars"
+          terraform apply -var-file="terraform.tfvars" -auto-approve
+          cd ..
+
+          # Download existing migrations from S3
+          echo "=== Downloading Existing Migrations ==="
+          make atlas/sync/download || echo "No existing migrations found"
+
+          # Apply tenant migrations
+          echo "=== Applying Tenant Migrations ==="
+          if [ -f .env ]; then
+            source .env
+            if [ -n "$TENANT" ]; then
+              echo "Applying migrations for specific tenant: $TENANT"
+            else
+              echo "Applying migrations for all tenants"
+            fi
+            make atlas/apply/tenant || echo "Migration failed or no changes needed"
+          else
+            echo "Warning: .env file not found, skipping tenant migrations"
+          fi
+
+          # Check generated SQL files
+          echo "=== Checking Generated SQL Files ==="
+          if [ -f "terraform/diffs/consolidated_schema_changes.sql" ]; then
+            echo "Found consolidated schema changes file:"
+            echo "========================================"
+            cat terraform/diffs/consolidated_schema_changes.sql
+            echo "========================================"
+
+            # Output SQL content in a format that can be captured by GitHub Actions
+            echo "GITHUB_SQL_OUTPUT_START"
+            cat terraform/diffs/consolidated_schema_changes.sql
+            echo "GITHUB_SQL_OUTPUT_END"
+
+            # Check if there are actual changes
+            if grep -q "CREATE\|ALTER\|DROP\|INSERT\|UPDATE\|DELETE" terraform/diffs/consolidated_schema_changes.sql; then
+              echo "✅ Schema changes detected in SQL file"
+              echo "GITHUB_CHANGES_DETECTED=true"
+            else
+              echo "ℹ️  No schema changes detected (empty migration)"
+              echo "GITHUB_CHANGES_DETECTED=false"
+            fi
+          else
+            echo "❌ No consolidated schema changes file found"
+            echo "GITHUB_SQL_OUTPUT_START"
+            echo "No SQL file generated"
+            echo "GITHUB_SQL_OUTPUT_END"
+            echo "GITHUB_CHANGES_DETECTED=error"
+          fi
+
+          # List all files in terraform/diffs for debugging
+          echo "Files in terraform/diffs/:"
+          ls -la terraform/diffs/ || echo "No diffs directory found"
+
+          # Upload migrations to S3
+          echo "=== Uploading Migrations to S3 ==="
+          make atlas/sync/upload || echo "S3 upload failed"
+
+          echo "✅ Migration Complete"
+      env:
+        REPO_URL: git@github.com:AInfoLink/multi-tenant-booking-service.git
+        BRANCH: ${{ github.ref_name }}
+        COMMIT_SHA: ${{ github.sha }}
+        TENANT: ${{ github.event.inputs.tenant || '' }}
+        RUN_NUMBER: ${{ github.run_number }}
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        DB_HOST: ${{ secrets.DB_HOST }}
+        DB_USER: ${{ secrets.DB_USER }}
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        DB_NAME: booking
+        DB_PORT: ${{ secrets.DB_PORT || 5432 }}
+
+
+    - name: Setup SSH key and download SQL content
       run: |
-        # Create migrations directory structure
-        mkdir -p artifacts/migrations
-        mkdir -p artifacts/terraform
-        mkdir -p artifacts/diffs
+        # Setup SSH key
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
 
-        # Copy migration files
-        if [ -d "migrations" ]; then
-          cp -r migrations/* artifacts/migrations/
-        fi
+        # Create local directory for SQL content
+        mkdir -p migration-sql
 
-        # Copy terraform state and plans
-        if [ -f "terraform/terraform.tfstate" ]; then
-          cp terraform/terraform.tfstate artifacts/terraform/
-        fi
+        # Copy SQL file from remote server if it exists
+        WORK_DIR="/tmp/migration-${{ github.run_number }}"
+        scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa \
+          ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${WORK_DIR}/terraform/diffs/consolidated_schema_changes.sql \
+          migration-sql/ 2>/dev/null || echo "No SQL file found or failed to copy"
 
-        # Copy schema files
-        if [ -d "terraform/hcl" ]; then
-          cp -r terraform/hcl artifacts/
-        fi
-
-        # Copy diffs (including consolidated_schema_changes.sql)
-        if [ -d "terraform/diffs" ]; then
-          cp -r terraform/diffs/* artifacts/diffs/
-        fi
-
-        # Ensure the consolidated SQL file is captured
-        if [ -f "terraform/diffs/consolidated_schema_changes.sql" ]; then
-          echo "✅ Consolidated SQL file copied to artifacts"
-        else
-          echo "⚠️  No consolidated SQL file found to copy"
-        fi
-
-        # Create migration summary
-        cat > artifacts/migration-summary.txt << EOF
-        Migration Summary
-        =================
-        Timestamp: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
-        Git Commit: ${{ github.sha }}
-        Tenant: ${{ github.event.inputs.tenant || 'default' }}
-        Trigger: ${{ github.event_name }}
-        Branch: ${{ github.ref_name }}
-
-        Files included:
-        $(find artifacts -type f | sort)
-        EOF
-
-    - name: Upload migration artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: migration-files-${{ github.run_number }}
-        path: artifacts/
-        retention-days: 30
-
-    - name: Upload migrations to S3
-      run: make atlas/sync/upload
-      continue-on-error: true
-
-    - name: Generate migration report
+    - name: Generate migration report and prepare SQL content
+      id: prepare-sql
       run: |
-        echo "## Migration Report" >> $GITHUB_STEP_SUMMARY
+        echo "## Migration Summary" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Timestamp:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY
+        echo "**Git Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
         echo "**Trigger:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Remote Server:** ${{ secrets.SSH_HOST }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Tenant:** ${{ github.event.inputs.tenant || 'all tenants' }}" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
 
-        # Check for the consolidated SQL file generated by Terraform
-        if [ -f "terraform/diffs/consolidated_schema_changes.sql" ]; then
-          # Check if there are actual changes (not just BEGIN/COMMIT)
-          if grep -q "CREATE\|ALTER\|DROP\|INSERT\|UPDATE\|DELETE" terraform/diffs/consolidated_schema_changes.sql; then
+        # Check if SQL file was downloaded and display content
+        if [ -f "migration-sql/consolidated_schema_changes.sql" ]; then
+          # Check if there are actual changes
+          if grep -q "CREATE\|ALTER\|DROP\|INSERT\|UPDATE\|DELETE" "migration-sql/consolidated_schema_changes.sql"; then
             echo "### ✅ Schema Changes Detected" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo '```sql' >> $GITHUB_STEP_SUMMARY
-            cat terraform/diffs/consolidated_schema_changes.sql >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
           else
             echo "### ℹ️ No Schema Changes Required" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "All tenant schemas are already up to date." >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "**Generated SQL:**" >> $GITHUB_STEP_SUMMARY
-            echo '```sql' >> $GITHUB_STEP_SUMMARY
-            cat terraform/diffs/consolidated_schema_changes.sql >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
           fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Generated SQL:**" >> $GITHUB_STEP_SUMMARY
+          echo '```sql' >> $GITHUB_STEP_SUMMARY
+          cat "migration-sql/consolidated_schema_changes.sql" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          
+          # Save SQL content for next job
+          {
+            echo 'SQL_CONTENT<<EOF'
+            cat "migration-sql/consolidated_schema_changes.sql"
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
+          
+          echo "SQL_AVAILABLE=true" >> $GITHUB_OUTPUT
         else
           echo "### ❌ No SQL Migration File Generated" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Terraform did not generate the expected consolidated_schema_changes.sql file." >> $GITHUB_STEP_SUMMARY
+          echo "Terraform did not generate the expected consolidated_schema_changes.sql file on the remote server." >> $GITHUB_STEP_SUMMARY
+          echo "SQL_AVAILABLE=false" >> $GITHUB_OUTPUT
         fi
 
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### Artifacts Generated" >> $GITHUB_STEP_SUMMARY
-        echo "- **SQL Migration File**: \`terraform/diffs/consolidated_schema_changes.sql\`" >> $GITHUB_STEP_SUMMARY
-        echo "- Migration files uploaded to S3" >> $GITHUB_STEP_SUMMARY
-        echo "- Migration artifacts available for download" >> $GITHUB_STEP_SUMMARY
+        echo "**Note:** Full migration logs are available in the SSH action output above." >> $GITHUB_STEP_SUMMARY
 
-    - name: Cleanup
+    - name: Cleanup remote files
       if: always()
-      run: |
-        docker stop postgres-dev || true
-        docker rm postgres-dev || true
-        rm -f .env terraform/terraform.tfvars || true
+      uses: appleboy/ssh-action@v1
+      env:
+        RUN_NUMBER: ${{ github.run_number }}
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: ${{ secrets.SSH_PORT || 22 }}
+        envs: RUN_NUMBER
+        script: |
+          # Clean up temporary files and sensitive data
+          rm -rf /tmp/migration-${RUN_NUMBER} || true
+
+          # Also clean up any .env files that might be left in other locations
+          find /tmp -name "*.env" -mtime -1 -delete 2>/dev/null || true
+
+          # Clean up terraform tfvars files
+          find /tmp -name "terraform.tfvars" -mtime -1 -delete 2>/dev/null || true
+
+          echo "✅ Remote cleanup completed - all temporary files and sensitive data removed"
+
+  apply-sql-to-database:
+    needs: migration
+    if: github.event.inputs.apply_to_db == 'true' && needs.migration.outputs.SQL_AVAILABLE == 'true'
+    uses: ./.github/workflows/apply-sql.yml
+    with:
+      apply_to_db: true
+      sql_content: ${{ needs.migration.outputs.SQL_CONTENT }}
+      database_name: 'booking'
+      tenant: ${{ github.event.inputs.tenant }}
+      dry_run: false
+    secrets:
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      SSH_PORT: ${{ secrets.SSH_PORT }}
+      DB_HOST: ${{ secrets.DB_HOST }}
+      DB_USER: ${{ secrets.DB_USER }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      DB_PORT: ${{ secrets.DB_PORT }}

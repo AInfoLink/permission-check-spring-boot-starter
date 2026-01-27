@@ -48,3 +48,9 @@ val OrderIdentityNotFound = AppDomainException("OrderIdentityNotFound", statusCo
 
 // 409 Conflict - Order resources already exist
 val OrderIdentityAlreadyExists = AppDomainException("OrderIdentityAlreadyExists", statusCode = HttpStatus.CONFLICT)
+
+// 400 Bad Request - OrderItem business rule validation
+val InvalidAmountForCategory = AppDomainException("InvalidAmountForCategory", statusCode = HttpStatus.BAD_REQUEST)
+
+// 422 Unprocessable Entity - OrderItem bulk operation failures
+val BulkUpdatePartialFailure = AppDomainException("BulkUpdatePartialFailure", statusCode = HttpStatus.UNPROCESSABLE_ENTITY)

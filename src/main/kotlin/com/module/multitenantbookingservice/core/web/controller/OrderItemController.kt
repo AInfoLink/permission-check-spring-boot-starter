@@ -1,9 +1,7 @@
 package com.module.multitenantbookingservice.core.web.controller
 
 import com.module.multitenantbookingservice.core.models.OrderItem
-import com.module.multitenantbookingservice.core.service.OrderItemCreation
-import com.module.multitenantbookingservice.core.service.OrderItemService
-import com.module.multitenantbookingservice.core.service.OrderItemUpdate
+import com.module.multitenantbookingservice.core.service.*
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -21,24 +19,6 @@ class OrderItemController(
         return ResponseEntity(orderItem, HttpStatus.CREATED)
     }
 
-    @GetMapping("/{itemId}")
-    fun getOrderItem(@PathVariable itemId: UUID): ResponseEntity<OrderItem> {
-        val orderItem = orderItemService.getOrderItem(itemId)
-        return ResponseEntity.ok(orderItem)
-    }
-
-    @GetMapping("/by-category/{categoryId}")
-    fun getOrderItemsByCategory(@PathVariable categoryId: UUID): ResponseEntity<List<OrderItem>> {
-        val orderItems = orderItemService.getOrderItemsByCategory(categoryId)
-        return ResponseEntity.ok(orderItems)
-    }
-
-    @GetMapping
-    fun getAllOrderItems(): ResponseEntity<List<OrderItem>> {
-        val orderItems = orderItemService.getAllOrderItems()
-        return ResponseEntity.ok(orderItems)
-    }
-
     @PutMapping("/{itemId}")
     fun updateOrderItem(
         @PathVariable itemId: UUID,
@@ -54,14 +34,29 @@ class OrderItemController(
         return ResponseEntity.ok(mapOf("message" to "Order item deleted successfully"))
     }
 
+    @PatchMapping("/{itemId}/amount")
+    fun updateOrderItemAmount(
+        @PathVariable itemId: UUID,
+        @RequestBody amountUpdate: OrderItemAmountUpdate
+    ): ResponseEntity<OrderItem> {
+        val orderItem = orderItemService.updateOrderItemAmount(itemId, amountUpdate)
+        return ResponseEntity.ok(orderItem)
+    }
 
-    @GetMapping("/by-category-and-amount-range")
-    fun getOrderItemsByCategoryAndAmountRange(
-        @RequestParam categoryId: UUID,
-        @RequestParam minAmount: Int,
-        @RequestParam maxAmount: Int
+    @PatchMapping("/{itemId}/category")
+    fun updateOrderItemCategory(
+        @PathVariable itemId: UUID,
+        @RequestBody categoryUpdate: OrderItemCategoryUpdate
+    ): ResponseEntity<OrderItem> {
+        val orderItem = orderItemService.updateOrderItemCategory(itemId, categoryUpdate)
+        return ResponseEntity.ok(orderItem)
+    }
+
+    @PutMapping("/bulk-update")
+    fun bulkUpdateOrderItems(
+        @RequestBody bulkUpdate: BulkOrderItemUpdate
     ): ResponseEntity<List<OrderItem>> {
-        val orderItems = orderItemService.getOrderItemsByCategoryAndAmountRange(categoryId, minAmount, maxAmount)
-        return ResponseEntity.ok(orderItems)
+        val updatedItems = orderItemService.bulkUpdateOrderItems(bulkUpdate)
+        return ResponseEntity.ok(updatedItems)
     }
 }

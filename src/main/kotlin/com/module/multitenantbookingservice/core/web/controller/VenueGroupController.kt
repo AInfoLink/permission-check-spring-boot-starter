@@ -72,16 +72,13 @@ class VenueGroupController(
     @PatchMapping("/{venueGroupId}/annotations")
     fun updateVenueGroupAnnotations(
         @PathVariable venueGroupId: UUID,
-        @RequestBody request: AnnotationsUpdateRequest
+        @RequestBody annotations: Map<String, Any>
     ): ResponseEntity<VenueGroup> {
         val venueGroup = venueService.updateVenueGroup(
             venueGroupId,
-            VenueGroupUpdate(annotations = request.annotations)
+            VenueGroupUpdate(annotations = annotations.toMutableMap())
         )
         return ResponseEntity.ok(venueGroup)
     }
 }
 
-data class AnnotationsUpdateRequest(
-    val annotations: MutableMap<String, Any>
-)

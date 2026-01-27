@@ -1,11 +1,11 @@
 package com.module.multitenantbookingservice.core.web.controller
 
-import com.module.multitenantbookingservice.core.models.IdentityType
 import com.module.multitenantbookingservice.core.models.Order
 import com.module.multitenantbookingservice.core.models.PaymentStatus
-import com.module.multitenantbookingservice.core.service.OrderCreation
-import com.module.multitenantbookingservice.core.service.OrderService
-import com.module.multitenantbookingservice.core.service.OrderUpdate
+import com.module.multitenantbookingservice.core.service.*
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -29,36 +29,25 @@ class OrderController(
         return ResponseEntity.ok(order)
     }
 
-    @GetMapping("/by-identity/{identityId}")
-    fun getOrdersByIdentity(@PathVariable identityId: UUID): ResponseEntity<List<Order>> {
-        val orders = orderService.getOrdersByIdentity(identityId)
-        return ResponseEntity.ok(orders)
-    }
+    @GetMapping("/search")
+    fun searchOrders(
+        @RequestParam(required = false) identityId: UUID?,
+        @RequestParam(required = false) email: String?,
+        @RequestParam(required = false) status: PaymentStatus?,
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "20") size: Int,
+        @RequestParam(defaultValue = "createdAt") sortBy: String,
+        @RequestParam(defaultValue = "desc") sort: Sort.Direction
+    ): ResponseEntity<Page<Order>> {
+        val query = OrderQuery(
+            identityId = identityId,
+            email = email,
+            paymentStatus = status
+        )
 
-    @GetMapping("/by-email/{email}")
-    fun getOrdersByEmail(@PathVariable email: String): ResponseEntity<List<Order>> {
-        val orders = orderService.getOrdersByEmail(email)
-        return ResponseEntity.ok(orders)
-    }
+        val pageable = PageRequest.of(page, size, Sort.by(sort, sortBy))
 
-    @GetMapping("/by-status/{status}")
-    fun getOrdersByPaymentStatus(@PathVariable status: PaymentStatus): ResponseEntity<List<Order>> {
-        val orders = orderService.getOrdersByPaymentStatus(status)
-        return ResponseEntity.ok(orders)
-    }
-
-    @GetMapping("/by-email-and-status")
-    fun getOrdersByEmailAndStatus(
-        @RequestParam email: String,
-        @RequestParam status: PaymentStatus
-    ): ResponseEntity<List<Order>> {
-        val orders = orderService.getOrdersByEmailAndStatus(email, status)
-        return ResponseEntity.ok(orders)
-    }
-
-    @GetMapping
-    fun getAllOrders(): ResponseEntity<List<Order>> {
-        val orders = orderService.getAllOrders()
+        val orders = orderService.searchOrders(query, pageable)
         return ResponseEntity.ok(orders)
     }
 
@@ -74,9 +63,9 @@ class OrderController(
     @PatchMapping("/{orderId}/payment-status")
     fun updatePaymentStatus(
         @PathVariable orderId: UUID,
-        @RequestBody request: PaymentStatusUpdateRequest
+        @RequestBody update: PaymentStatusUpdate
     ): ResponseEntity<Order> {
-        val order = orderService.updatePaymentStatus(orderId, request.status)
+        val order = orderService.updatePaymentStatus(orderId, update)
         return ResponseEntity.ok(order)
     }
 
@@ -87,13 +76,3 @@ class OrderController(
     }
 }
 
-data class PaymentStatusUpdateRequest(
-    val status: PaymentStatus
-)
-
-data class FindOrCreateIdentityRequest(
-    val email: String,
-    val name: String,
-    val type: IdentityType,
-    val userId: UUID? = null
-)

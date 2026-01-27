@@ -6,6 +6,8 @@ import com.module.multitenantbookingservice.core.repository.OrderRepository
 import com.module.multitenantbookingservice.security.*
 import com.module.multitenantbookingservice.security.repository.UserRepository
 import com.module.multitenantbookingservice.security.repository.model.User
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
@@ -32,19 +34,27 @@ data class OrderUpdate(
     val paymentStatus: PaymentStatus? = null
 )
 
+data class PaymentStatusUpdate(
+    val status: PaymentStatus
+)
+
+data class OrderQuery(
+    val identityId: UUID? = null,
+    val email: String? = null,
+    val paymentStatus: PaymentStatus? = null
+)
+
 interface OrderService {
     fun createOrderIdentity(identity: OrderIdentityCreation): OrderIdentity
     // Order operations
     fun createOrder(order: OrderCreation): Order
     fun getOrderById(orderId: UUID): Order
-    fun getOrdersByIdentity(identityId: UUID): List<Order>
-    fun getOrdersByEmail(email: String): List<Order>
-    fun getOrdersByPaymentStatus(status: PaymentStatus): List<Order>
-    fun getOrdersByEmailAndStatus(email: String, status: PaymentStatus): List<Order>
-    fun getAllOrders(): List<Order>
+    fun searchOrders(query: OrderQuery, pageable: Pageable): Page<Order>
     fun updateOrder(orderId: UUID, update: OrderUpdate): Order
-    fun updatePaymentStatus(orderId: UUID, status: PaymentStatus): Order
+    fun updatePaymentStatus(orderId: UUID, update: PaymentStatusUpdate): Order
     fun deleteOrder(orderId: UUID)
+
+    fun getAllOrders(): List<Order>
 }
 
 @Service
@@ -108,37 +118,16 @@ class DefaultOrderService(
     }
 
     /**
-     * 根據訂單身份查詢所有訂單
+     * 統一的訂單搜尋方法，支援多種查詢條件和分頁
      */
     @Transactional(readOnly = true)
-    override fun getOrdersByIdentity(identityId: UUID): List<Order> {
-        val identity = orderIdentityRepository.findById(identityId).getOrNull()
-            ?: throw OrderIdentityNotFound
-        return orderRepository.findByIdentity(identity)
-    }
-
-    /**
-     * 根據 email 查詢所有訂單
-     */
-    @Transactional(readOnly = true)
-    override fun getOrdersByEmail(email: String): List<Order> {
-        return orderRepository.findByIdentityEmail(email)
-    }
-
-    /**
-     * 根據支付狀態查詢訂單
-     */
-    @Transactional(readOnly = true)
-    override fun getOrdersByPaymentStatus(status: PaymentStatus): List<Order> {
-        return orderRepository.findByPaymentStatus(status)
-    }
-
-    /**
-     * 根據 email 和支付狀態查詢訂單
-     */
-    @Transactional(readOnly = true)
-    override fun getOrdersByEmailAndStatus(email: String, status: PaymentStatus): List<Order> {
-        return orderRepository.findByIdentityEmailAndPaymentStatus(email, status)
+    override fun searchOrders(query: OrderQuery, pageable: Pageable): Page<Order> {
+        return orderRepository.findOrdersWithCriteria(
+            identityId = query.identityId,
+            email = query.email,
+            paymentStatus = query.paymentStatus,
+            pageable = pageable
+        )
     }
 
     /**
@@ -173,9 +162,9 @@ class DefaultOrderService(
      * 更新訂單支付狀態
      */
     @Transactional
-    override fun updatePaymentStatus(orderId: UUID, status: PaymentStatus): Order {
+    override fun updatePaymentStatus(orderId: UUID, update: PaymentStatusUpdate): Order {
         val order = orderRepository.findById(orderId).getOrNull() ?: throw OrderNotFound
-        order.paymentStatus = status
+        order.paymentStatus = update.status
         return orderRepository.save(order)
     }
 

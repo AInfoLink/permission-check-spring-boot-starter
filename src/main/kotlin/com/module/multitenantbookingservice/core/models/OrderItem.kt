@@ -14,14 +14,14 @@ class OrderItem(
     val id: UUID = UUID.randomUUID(),
 
     @Column(name = "description", nullable = false, length = 500)
-    val description: String,
+    var description: String,
 
     @Column(name = "amount", nullable = false)
-    val amount: Int,
+    var amount: Int,
 
     @ManyToOne
     @JoinColumn(name = "category_id", nullable = false)
-    val category: ItemCategory,
+    var category: ItemCategory,
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false)
