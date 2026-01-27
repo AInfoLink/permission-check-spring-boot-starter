@@ -4,6 +4,8 @@ import com.module.multitenantbookingservice.core.models.*
 import com.module.multitenantbookingservice.core.repository.VenueGroupRepository
 import com.module.multitenantbookingservice.core.repository.VenueRepository
 import com.module.multitenantbookingservice.security.*
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.*
@@ -44,6 +46,16 @@ data class VenueGroupUpdate(
     val annotations: MutableMap<String, Any> = mutableMapOf()
 )
 
+data class VenueQuery(
+    val name: String? = null,
+    val description: String? = null,
+    val location: String? = null,
+    val venueGroupId: UUID? = null,
+    val venueGroupName: String? = null,
+    val bookingSlotType: BookingSlotType? = null,
+    val isScheduleActive: Boolean? = null
+)
+
 interface VenueService {
     // VenueGroup operations
     fun createVenueGroup(group: VenueGroupCreation): VenueGroup
@@ -60,6 +72,7 @@ interface VenueService {
     fun getVenueByName(name: String): Venue
     fun getVenuesByGroup(venueGroupId: UUID): List<Venue>
     fun getAllVenues(): List<Venue>
+    fun searchVenues(query: VenueQuery, pageable: Pageable): Page<Venue>
     fun updateVenue(venueId: UUID, update: VenueUpdate): Venue
     fun deleteVenue(venueId: UUID)
 }
@@ -208,6 +221,23 @@ class DefaultVenueService(
     @Transactional(readOnly = true)
     override fun getAllVenues(): List<Venue> {
         return venueRepository.findAll()
+    }
+
+    /**
+     * 搜尋場地（支援分頁和多條件查詢）
+     */
+    @Transactional(readOnly = true)
+    override fun searchVenues(query: VenueQuery, pageable: Pageable): Page<Venue> {
+        return venueRepository.searchVenues(
+            name = query.name,
+            description = query.description,
+            location = query.location,
+            venueGroupId = query.venueGroupId,
+            venueGroupName = query.venueGroupName,
+            bookingSlotType = query.bookingSlotType,
+            isScheduleActive = query.isScheduleActive,
+            pageable = pageable
+        )
     }
 
     /**
