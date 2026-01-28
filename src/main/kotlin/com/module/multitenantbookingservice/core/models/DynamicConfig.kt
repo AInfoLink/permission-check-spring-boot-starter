@@ -1,4 +1,4 @@
-package com.module.multitenantbookingservice.core.config
+package com.module.multitenantbookingservice.core.models
 
 import jakarta.persistence.Entity
 import jakarta.persistence.Id

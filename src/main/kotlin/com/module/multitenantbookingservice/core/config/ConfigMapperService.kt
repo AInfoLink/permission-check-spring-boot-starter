@@ -1,6 +1,7 @@
 package com.module.multitenantbookingservice.core.config
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.module.multitenantbookingservice.core.models.DynamicConfig
 import org.springframework.stereotype.Service
 
 /**
