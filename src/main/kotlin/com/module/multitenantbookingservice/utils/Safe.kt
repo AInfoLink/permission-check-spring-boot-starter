@@ -5,7 +5,7 @@ import org.slf4j.Logger
 
 class Safe {
     companion object {
-        fun <T> call(logger: Logger,action: () -> T): T?{
+        inline fun <T> call(logger: Logger,action: () -> T): T?{
             try {
                 return action()
             } catch (exception: Exception) {
