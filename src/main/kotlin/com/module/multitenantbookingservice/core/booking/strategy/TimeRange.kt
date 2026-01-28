@@ -32,6 +32,7 @@ data class TimeRange(
 
     /**
      * Convenience constructor for time ranges within a single day
+     * (assumes today's date, as dummy date)
      */
     constructor(startTime: LocalTime, endTime: LocalTime) : this(
         LocalDate.now(), startTime, endTime

@@ -10,6 +10,32 @@ schema "tenant" {
   name = var.tenant
 }
 
+table "dynamic_configs" {
+  schema = schema.tenant
+
+  column "id" {
+    null = false
+    type = uuid
+  }
+  column "key" {
+    null = false
+    type = character_varying(255)
+  }
+  column "body" {
+    null = false
+    type = jsonb
+  }
+
+  primary_key {
+    columns = [column.id]
+  }
+  index "idx_dynamic_configs_key" {
+    columns = [column.key]
+  }
+  unique "idx_dynamic_configs_key_unique" {
+    columns = [column.key]
+  }
+}
 
 table "order_item_categories" {
   schema = schema.tenant
