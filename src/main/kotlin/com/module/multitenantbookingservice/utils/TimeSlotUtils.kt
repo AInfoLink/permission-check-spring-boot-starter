@@ -1,4 +1,4 @@
-package com.module.multitenantbookingservice.core.utils
+package com.module.multitenantbookingservice.utils
 
 import java.time.LocalDateTime
 

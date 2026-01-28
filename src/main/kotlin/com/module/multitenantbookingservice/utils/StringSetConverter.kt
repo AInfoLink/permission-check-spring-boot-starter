@@ -1,4 +1,4 @@
-package com.module.multitenantbookingservice.core.utils
+package com.module.multitenantbookingservice.utils
 
 import jakarta.persistence.AttributeConverter
 import jakarta.persistence.Converter

@@ -1,6 +1,6 @@
 package com.module.multitenantbookingservice.core.models
 
-import com.module.multitenantbookingservice.core.utils.StringSetConverter
+import com.module.multitenantbookingservice.utils.StringSetConverter
 import jakarta.persistence.*
 import org.hibernate.annotations.CreationTimestamp
 import org.hibernate.annotations.UpdateTimestamp

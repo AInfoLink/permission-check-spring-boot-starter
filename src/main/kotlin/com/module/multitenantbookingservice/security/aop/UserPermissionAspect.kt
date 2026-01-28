@@ -4,6 +4,7 @@ import com.module.multitenantbookingservice.security.annotation.Require
 import com.module.multitenantbookingservice.security.annotation.extractPermissions
 import com.module.multitenantbookingservice.security.permission.PermissionEvaluator
 import com.module.multitenantbookingservice.security.repository.model.User
+import com.module.multitenantbookingservice.utils.Safe
 import org.aspectj.lang.ProceedingJoinPoint
 import org.aspectj.lang.annotation.Around
 import org.aspectj.lang.annotation.Aspect
@@ -115,14 +116,24 @@ class UserPermissionAspect(
      * Get current user ID from Spring Security Context
      */
     private fun getCurrentUserId(): UUID? {
-        return try {
+        return Safe.call(logger) {
+            logger.debug("Retrieving current user ID from security context")
             val context = SecurityContextHolder.getContext()
-            val authentication = context.authentication ?: return null
-            val principal = authentication.principal ?: return null
-            val user = principal as? User ?: return null
+            val authentication = context.authentication
+
+            if (authentication == null) {
+                logger.warn("No authentication found in security context")
+                return@call null
+            }
+
+            val principal = authentication.principal
+            val user = principal as? User
+
+            if (user == null) {
+                logger.warn("Principal is not a User instance: ${principal?.javaClass?.simpleName}")
+                return@call null
+            }
             user.id
-        } catch (ex: Exception) {
-            null
         }
     }
 }
