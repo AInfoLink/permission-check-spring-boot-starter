@@ -3,6 +3,14 @@ package com.module.multitenantbookingservice.core.booking.strategy
 import com.module.multitenantbookingservice.security.model.User
 import org.springframework.stereotype.Service
 
+
+enum class Strategy(val strategyName: String) {
+    BASE_PRICE("BasePrice"),
+    TIME_BASED("TimeBased"),
+    MEMBERSHIP("Membership"),
+    OVERRIDE("Override")
+}
+
 data class PricingContext(
     val user: User
 )
@@ -29,7 +37,7 @@ interface PricingStrategy {
     fun supports(strategyName: String): Boolean {
         return strategyName == name
     }
-    fun calculatePrice(context: PricingContext): PricingItemResult
+    fun calculatePrice(context: PricingContext, currentResult: PricingResult): PricingResult
 }
 
 
@@ -45,12 +53,15 @@ class DefaultPricingStrategyEngine : PricingStrategyEngine {
         strategies: Iterable<PricingStrategy>
     ): PricingResult {
         val sortedStrategies = strategies.sortedBy { it.priority }
-        val pricingItems = mutableListOf<PricingItemResult>()
+
+        // Start with empty result and let each strategy build upon it
+        var currentResult = PricingResult(emptyList())
+
         for (strategy in sortedStrategies) {
-            val itemResult = strategy.calculatePrice(context)
-            pricingItems.add(itemResult)
+            currentResult = strategy.calculatePrice(context, currentResult)
         }
-        return PricingResult(pricingItems)
+
+        return currentResult
     }
 }
 
