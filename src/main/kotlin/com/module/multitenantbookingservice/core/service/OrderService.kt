@@ -172,7 +172,11 @@ class DefaultOrderService(
     @Require(Permission.ORDERS_READ)
     @Transactional(readOnly = true)
     override fun getOrderById(orderId: UUID): Order {
-        return orderRepository.findById(orderId).getOrNull() ?: throw OrderNotFound
+        logger.debug("Retrieving order by ID: $orderId")
+        return orderRepository.findById(orderId).getOrNull() ?: run {
+            logger.warn("Order not found for ID: $orderId")
+            throw OrderNotFound
+        }
     }
 
     /**
@@ -246,16 +250,33 @@ class DefaultOrderService(
     @Require(Permission.ORDERS_DELETE)
     @Transactional
     override fun deleteOrder(orderId: UUID) {
-        val order = orderRepository.findById(orderId).getOrNull() ?: return
-        orderRepository.delete(order)
+        logger.info("Attempting to delete order: $orderId")
+
+        val order = orderRepository.findById(orderId).getOrNull()
+        if (order == null) {
+            logger.warn("Order deletion requested but order not found: $orderId")
+            return
+        }
+
+        try {
+            orderRepository.delete(order)
+            logger.info("Order deleted successfully - ID: $orderId, amount: ${order.amount}")
+        } catch (ex: Exception) {
+            logger.error("Failed to delete order: $orderId", ex)
+            throw ex
+        }
     }
 
 
     fun validateAmountForCategory(category: OrderItemCategory, amount: Int) {
+        logger.debug("Validating amount $amount for category: ${category.code} (${category.operationType})")
+
         if (!category.validateAmountForOperationType(amount)) {
-            throw InvalidAmountForCategory.withDetails(
-                "Amount $amount is invalid for category ${category.code} with operation type ${category.operationType}"
-            )
+            val errorMessage = "Amount $amount is invalid for category ${category.code} with operation type ${category.operationType}"
+            logger.error("Amount validation failed: $errorMessage")
+            throw InvalidAmountForCategory.withDetails(errorMessage)
         }
+
+        logger.debug("Amount validation successful for category: ${category.code}")
     }
 }

@@ -244,7 +244,7 @@ class DefaultVenueService(
     }
 
     /**
-     * 查詢所有場地
+     * Query all venues
      */
     @Require(Permission.VENUES_READ)
     @Transactional(readOnly = true)

@@ -4,6 +4,7 @@ import com.module.multitenantbookingservice.core.models.UserProfile
 import com.module.multitenantbookingservice.core.service.UserProfileService
 import com.module.multitenantbookingservice.core.service.PermissionReloadEvent
 import com.module.multitenantbookingservice.security.annotation.Permission
+import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.context.event.EventListener
@@ -42,52 +43,59 @@ class DefaultPermissionEvaluator(
     private val userPermissionService: UserPermissionService
 ): PermissionEvaluator {
 
+    private val logger = LoggerFactory.getLogger(DefaultPermissionEvaluator::class.java)
+
     override fun hasPermission(userId: UUID, permission: String): Boolean {
-        return try {
-            val userPermissions = userPermissionService.getUserPermissions(userId)
-            matchesPermission(userPermissions, permission)
-        } catch (e: Exception) {
-            // Log exception and deny access by default
-            false
+        logger.debug("Evaluating permission '$permission' for user: $userId")
+
+        val userPermissions = userPermissionService.getUserPermissions(userId)
+        val hasPermission = matchesPermission(userPermissions, permission)
+
+        if (!hasPermission) {
+            logger.debug("Permission '$permission' denied for user: $userId - Available permissions: $userPermissions")
+        } else {
+            logger.debug("Permission '$permission' granted for user: $userId")
         }
+
+        return hasPermission
     }
 
 
     /**
-     * 检查用户权限是否匹配所需权限
-     * 支持通配符匹配 (如 "orders:*" 匹配 "orders:read")
-     * 支持系统全权限 "*:*"
+     * Check if user permissions match required permissions
+     * Supports wildcard matching (e.g., "orders:*" matches "orders:read")
+     * Supports system-wide permissions "*:*"
      */
     private fun matchesPermission(userPermissions: Set<String>, requiredPermission: String): Boolean {
 
-        // 系统全权限
+        // System-wide permissions
         if (userPermissions.contains(Permission.SYSTEM_ALL.toString())) {
             return true
         }
 
-        // 直接匹配
+        // Direct match
         if (userPermissions.contains(requiredPermission)) {
             return true
         }
 
 
-        // 通配符匹配 domain:*
-        // 例如: "orders:*" 匹配 "orders:read"
+        // Wildcard matching domain:*
+        // Example: "orders:*" matches "orders:read"
         val parts = requiredPermission.split(":")
         if (parts.size != 2) {
             return false
         }
 
         val domain = parts.first()
-        val wildcardActionPermission = "$domain:*"  // 例如 "orders:*"
+        val wildcardActionPermission = "$domain:*"  // Example: "orders:*"
         if (userPermissions.contains(wildcardActionPermission)) {
             return true
         }
 
-        // 通配符 *:action
+        // Wildcard *:action
 
         val action = parts.last()
-        val wildcardDomainPermission = "*:$action" // 例如 "*:read"
+        val wildcardDomainPermission = "*:$action" // Example: "*:read"
         if (userPermissions.contains(wildcardDomainPermission)) {
             return true
         }

@@ -34,11 +34,15 @@ class UserPermissionAspect(
         require: Require
     ): Any? {
         val methodName = (joinPoint.signature as MethodSignature).method.name
+        val className = joinPoint.target.javaClass.simpleName
+
         val currentUserId = getCurrentUserId()
             ?: throw SecurityException("User not authenticated")
 
+        logger.debug("Permission check initiated for user=$currentUserId method=$className.$methodName")
+
         validatePermissions(currentUserId, require, methodName)
-        logger.info("Permission granted for user=$currentUserId method=$methodName")
+        logger.debug("Permission granted for user=$currentUserId method=$className.$methodName")
 
         return joinPoint.proceed()
     }

@@ -3,12 +3,12 @@ package com.module.multitenantbookingservice.system.tenancy.context
 import org.slf4j.LoggerFactory
 
 /**
- * 租户上下文持有者 - 单例对象
+ * Tenant Context Holder - Singleton Object
  *
- * 职责：
- * 1. 在当前线程中保存租户ID
- * 2. 支持线程间的租户上下文传递
- * 3. 提供租户上下文的清理
+ * Responsibilities:
+ * 1. Store tenant ID in the current thread
+ * 2. Support tenant context passing between threads
+ * 3. Provide tenant context cleanup
  */
 object TenantContextHolder {
 

@@ -7,14 +7,14 @@ import java.time.Instant
 import java.util.*
 
 enum class CategoryType {
-    SYSTEM_MANAGED,    // 系統預設，不可刪除
-    USER_MANAGED       // 用戶自訂，可編輯刪除
+    SYSTEM_MANAGED,    // System default, cannot be deleted
+    USER_MANAGED       // User-defined, can be edited and deleted
 }
 
 enum class OperationType {
-    CHARGE,     // 收費操作：正值金額，如預訂、租借
-    REFUND,     // 退費操作：負值金額，如取消、退款
-    NEUTRAL     // 中性操作：無金額變動，如查詢、確認
+    CHARGE,     // Charge operation: positive amount, e.g., booking, rental
+    REFUND,     // Refund operation: negative amount, e.g., cancellation, refund
+    NEUTRAL     // Neutral operation: no amount change, e.g., query, confirmation
 }
 
 @Entity
@@ -32,10 +32,10 @@ class OrderItemCategory(
     val id: UUID = UUID.randomUUID(),
 
     @Column(name = "code", nullable = false, length = 50, unique = true)
-    val code: String,  // BOOKING, RENTAL, etc. 用於程式識別
+    val code: String,  // BOOKING, RENTAL, etc. Used for program identification
 
     @Column(name = "name", nullable = false, length = 100)
-    var name: String,  // 顯示名稱，可多語言
+    var name: String,  // Display name, supports multiple languages
 
     @Column(name = "description", nullable = true, length = 500)
     var description: String? = null,
@@ -60,30 +60,30 @@ class OrderItemCategory(
     val updatedAt: Instant
 ) {
     /**
-     * 驗證金額是否符合操作類型
-     * @param amount 交易金額
-     * @return 如果金額符合操作類型則返回true
+     * Validates whether the amount matches the operation type
+     * @param amount Transaction amount
+     * @return Returns true if the amount matches the operation type
      */
     fun validateAmountForOperationType(amount: Int): Boolean {
         return when (operationType) {
-            OperationType.CHARGE -> amount > 0    // 收費操作必須為正值
-            OperationType.REFUND -> amount < 0    // 退費操作必須為負值
-            OperationType.NEUTRAL -> amount == 0 // 中性操作金額為零
+            OperationType.CHARGE -> amount > 0    // Charge operations must be positive
+            OperationType.REFUND -> amount < 0    // Refund operations must be negative
+            OperationType.NEUTRAL -> amount == 0 // Neutral operations have zero amount
         }
     }
 
     /**
-     * 檢查是否為收費操作
+     * Checks if this is a charge operation
      */
     fun isChargeOperation(): Boolean = operationType == OperationType.CHARGE
 
     /**
-     * 檢查是否為退費操作
+     * Checks if this is a refund operation
      */
     fun isRefundOperation(): Boolean = operationType == OperationType.REFUND
 
     /**
-     * 檢查是否為中性操作（無金額變動）
+     * Checks if this is a neutral operation (no amount change)
      */
     fun isNeutralOperation(): Boolean = operationType == OperationType.NEUTRAL
 }
