@@ -1,4 +1,4 @@
-package com.module.multitenantbookingservice.core.booking.strategy
+package com.module.multitenantbookingservice.core.strategy
 
 import java.time.Duration
 import java.time.LocalDate

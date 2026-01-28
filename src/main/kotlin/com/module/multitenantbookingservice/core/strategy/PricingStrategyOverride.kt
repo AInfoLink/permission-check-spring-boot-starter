@@ -1,4 +1,4 @@
-package com.module.multitenantbookingservice.core.booking.strategy
+package com.module.multitenantbookingservice.core.strategy
 
 class PricingStrategyOverride(override var priority: Int = Int.MAX_VALUE) : PricingStrategy {
     override val name: String

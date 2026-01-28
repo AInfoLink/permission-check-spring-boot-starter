@@ -1,4 +1,4 @@
-package com.module.multitenantbookingservice.core.booking.strategy
+package com.module.multitenantbookingservice.core.strategy
 
 import org.springframework.stereotype.Component
 import java.time.Duration
@@ -35,7 +35,8 @@ class CrossDayBookingPricingStrategy : PricingStrategy {
                     description = "$dayLabel ${timeRange.startTime.toLocalTime()}-${timeRange.endTime.toLocalTime()} (${formatDuration(timeRange.duration)})",
                     timeRange = timeRange,
                     price = 0.0 // Price to be calculated by other strategies
-            ))
+            )
+            )
         }
 
         return PricingResult(newItems)

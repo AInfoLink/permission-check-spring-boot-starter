@@ -1,4 +1,4 @@
-package com.module.multitenantbookingservice.core.booking.strategy
+package com.module.multitenantbookingservice.core.strategy
 
 import com.module.multitenantbookingservice.security.model.User
 import com.module.multitenantbookingservice.core.models.Venue
