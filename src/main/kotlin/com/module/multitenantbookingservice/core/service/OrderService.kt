@@ -18,6 +18,7 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.util.*
 import kotlin.jvm.optionals.getOrNull
@@ -79,19 +80,28 @@ class DefaultOrderService(
     private val orderItemCategoryRepository: OrderItemCategoryRepository
 ): OrderService {
 
+    private val logger = LoggerFactory.getLogger(DefaultOrderService::class.java)
+
     /**
-     * 創建訂單身份，可選擇關聯已存在的用戶
+     * Create order identity with optional association to existing user
      */
     @Require(Permission.ORDERS_CREATE)
     @Transactional
     override fun createOrderIdentity(identity: OrderIdentityCreation): OrderIdentity {
-        // 檢查是否已經存在相同 email 和 type 的身份
+        logger.info("Attempting to create order identity for email: ${identity.email}, type: ${identity.type}")
+
+        // Check if identity with same email and type already exists
         orderIdentityRepository.findByEmailAndType(identity.email, identity.type).getOrNull()?.let {
+            logger.warn("Order identity creation failed - duplicate found for email: ${identity.email}, type: ${identity.type}")
             throw OrderIdentityAlreadyExists
         }
 
         val user: User? = identity.userId?.let { userId ->
-            userRepository.findById(userId).getOrNull() ?: throw UserNotFound
+            logger.debug("Linking order identity to existing user: $userId")
+            userRepository.findById(userId).getOrNull() ?: run {
+                logger.error("User not found for ID: $userId during order identity creation")
+                throw UserNotFound
+            }
         }
 
         val orderIdentity = OrderIdentity(
@@ -102,17 +112,23 @@ class DefaultOrderService(
             createdAt = Instant.now()
         )
 
-        return orderIdentityRepository.save(orderIdentity)
+        val savedIdentity = orderIdentityRepository.save(orderIdentity)
+        logger.info("Order identity created successfully - ID: ${savedIdentity.id}, email: ${savedIdentity.email}")
+        return savedIdentity
     }
 
     /**
-     * 創建訂單
+     * Create order
      */
     @Require(Permission.ORDERS_CREATE)
     @Transactional
     override fun createOrder(order: OrderCreation): Order {
-        val identity = orderIdentityRepository.findById(order.identityId).getOrNull()
-            ?: throw OrderIdentityNotFound
+        logger.info("Creating order for identity: ${order.identityId}, amount: ${order.amount}, items count: ${order.items.size}")
+
+        val identity = orderIdentityRepository.findById(order.identityId).getOrNull() ?: run {
+            logger.error("Order creation failed - identity not found: ${order.identityId}")
+            throw OrderIdentityNotFound
+        }
 
         val newOrder = Order(
             description = order.description,
@@ -123,14 +139,17 @@ class DefaultOrderService(
             updatedAt = Instant.now()
         )
 
-        // 建立訂單項目
+        // Create order items
         order.items.forEach { itemData ->
-            val category = orderItemCategoryRepository.findById(itemData.categoryId).getOrNull()
-                ?: throw ItemCategoryNotFound
+            logger.debug("Processing order item - category: ${itemData.categoryId}, amount: ${itemData.amount}")
 
-            // 驗證金額是否符合分類的操作類型
+            val category = orderItemCategoryRepository.findById(itemData.categoryId).getOrNull() ?: run {
+                logger.error("Order item creation failed - category not found: ${itemData.categoryId}")
+                throw ItemCategoryNotFound
+            }
+
+            // Validate amount according to category operation type
             validateAmountForCategory(category, itemData.amount)
-
             val orderItem = OrderItem(
                 description = itemData.description,
                 amount = itemData.amount,
@@ -142,11 +161,13 @@ class DefaultOrderService(
             newOrder.items.add(orderItem)
         }
 
-        return orderRepository.save(newOrder)  // Cascade 會自動儲存 items
+        val savedOrder = orderRepository.save(newOrder)  // Cascade will automatically save items
+        logger.info("Order created successfully - ID: ${savedOrder.id}, total amount: ${savedOrder.amount}, items count: ${savedOrder.items.size}")
+        return savedOrder
     }
 
     /**
-     * 查詢訂單
+     * Query order by ID
      */
     @Require(Permission.ORDERS_READ)
     @Transactional(readOnly = true)
@@ -155,7 +176,7 @@ class DefaultOrderService(
     }
 
     /**
-     * 統一的訂單搜尋方法，支援多種查詢條件和分頁
+     * Unified order search method supporting multiple query criteria and pagination
      */
     @Require(Permission.ORDERS_READ)
     @Transactional(readOnly = true)
@@ -169,7 +190,7 @@ class DefaultOrderService(
     }
 
     /**
-     * 查詢所有訂單
+     * Query all orders
      */
     @Require(Permission.ORDERS_READ)
     @Transactional(readOnly = true)
@@ -178,7 +199,7 @@ class DefaultOrderService(
     }
 
     /**
-     * 更新訂單信息
+     * Update order information
      */
     @Require(Permission.ORDERS_UPDATE)
     @Transactional
@@ -199,18 +220,28 @@ class DefaultOrderService(
     }
 
     /**
-     * 更新訂單支付狀態
+     * Update order payment status
      */
     @Require(Permission.ORDERS_UPDATE)
     @Transactional
     override fun updatePaymentStatus(orderId: UUID, update: PaymentStatusUpdate): Order {
-        val order = orderRepository.findById(orderId).getOrNull() ?: throw OrderNotFound
+        logger.info("Updating payment status for order: $orderId to status: ${update.status}")
+
+        val order = orderRepository.findById(orderId).getOrNull() ?: run {
+            logger.error("Payment status update failed - order not found: $orderId")
+            throw OrderNotFound
+        }
+
+        val previousStatus = order.paymentStatus
         order.paymentStatus = update.status
-        return orderRepository.save(order)
+        val updatedOrder = orderRepository.save(order)
+
+        logger.info("Payment status updated successfully - order: $orderId, from: $previousStatus to: ${update.status}")
+        return updatedOrder
     }
 
     /**
-     * 刪除訂單
+     * Delete order
      */
     @Require(Permission.ORDERS_DELETE)
     @Transactional

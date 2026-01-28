@@ -1,5 +1,6 @@
 package com.module.multitenantbookingservice.core.models
 
+import com.module.multitenantbookingservice.security.permission.HasResourceOwner
 import com.module.multitenantbookingservice.security.repository.model.User
 import jakarta.persistence.*
 import org.hibernate.annotations.CreationTimestamp
@@ -48,7 +49,16 @@ class OrderIdentity(
     @CreationTimestamp
     @Column(name = "created_at", nullable = false)
     val createdAt: Instant
-)
+) : HasResourceOwner {
+    override fun getResourceOwnerId(): String {
+        return when (type) {
+            IdentityType.USER -> user?.id?.toString()
+                ?: throw IllegalStateException("OrderIdentity of type USER must be associated with a User")
+            IdentityType.GUEST -> email
+            IdentityType.SYSTEM -> "SYSTEM"
+        }
+    }
+}
 
 @Entity
 @Table(name = "orders")
@@ -81,8 +91,12 @@ class Order(
 
     @OneToMany(mappedBy = "order", cascade = [CascadeType.ALL], orphanRemoval = true)
     val items: MutableSet<OrderItem> = mutableSetOf()
-) {
+): HasResourceOwner {
     val email: String get() = identity.email
 
     fun isPaid(): Boolean = this.paymentStatus == PaymentStatus.PAID
+
+    override fun getResourceOwnerId(): String {
+        return identity.getResourceOwnerId()
+    }
 }

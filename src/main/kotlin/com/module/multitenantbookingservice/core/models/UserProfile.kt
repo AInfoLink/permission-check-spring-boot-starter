@@ -21,7 +21,7 @@ class UserProfile(
 
     /**
      * Reference to global user identity in public schema.
-     * 使用 cross schema foreign key 確保參照完整性
+     * Uses cross schema foreign key to ensure referential integrity
      */
     @OneToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(
@@ -32,8 +32,8 @@ class UserProfile(
     val user: User,
 
     /**
-     * 租戶特定的角色 (與 public.User 的 systemRoles 不同)
-     * 例如: VENUE_ADMIN, BOOKING_MANAGER, MEMBER
+     * Tenant-specific roles (different from systemRoles in public.User)
+     * Examples: VENUE_ADMIN, BOOKING_MANAGER, MEMBER
      */
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(

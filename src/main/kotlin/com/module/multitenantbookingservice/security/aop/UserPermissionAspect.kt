@@ -59,14 +59,14 @@ class UserPermissionAspect(
     }
 
     /**
-     * 檢查使用者權限（簡化版 - 不處理資源擁有者檢查）
+     * Check user permissions (simplified version - does not handle resource owner validation)
      */
     private fun checkPermissions(userId: UUID, require: Require): Boolean {
         val permissionsToCheck = require.extractPermissions()
 
         return when (require.requireAll) {
             true -> {
-                // AND 邏輯 - 需要所有權限
+                // AND logic - requires all permissions
                 for (permission in permissionsToCheck) {
                     if (!permissionEvaluator.hasPermission(userId, permission)) {
                         return false
@@ -75,7 +75,7 @@ class UserPermissionAspect(
                 true
             }
             false -> {
-                // OR 邏輯 - 任一權限即可
+                // OR logic - any permission is sufficient
                 for (permission in permissionsToCheck) {
                     if (permissionEvaluator.hasPermission(userId, permission)) {
                         return true
@@ -87,7 +87,7 @@ class UserPermissionAspect(
     }
 
     /**
-     * 取得權限資訊字串（用於日誌和錯誤訊息）
+     * Get permission information string (for logging and error messages)
      */
     private fun getPermissionsContext(require: Require): String {
         val permissionsToCheck = require.extractPermissions()
@@ -108,7 +108,7 @@ class UserPermissionAspect(
         }
 
     /**
-     * 從 Spring Security Context 取得當前使用者ID
+     * Get current user ID from Spring Security Context
      */
     private fun getCurrentUserId(): UUID? {
         return try {

@@ -16,6 +16,7 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.slf4j.LoggerFactory
 import java.util.*
 import kotlin.jvm.optionals.getOrNull
 
@@ -92,14 +93,19 @@ class DefaultVenueService(
     private val venueGroupRepository: VenueGroupRepository
 ): VenueService {
 
+    private val logger = LoggerFactory.getLogger(DefaultVenueService::class.java)
+
     /**
-     * 創建場地組，確保名稱的唯一性
+     * Create venue group, ensuring name uniqueness
      */
     @Require(Permission.VENUE_GROUPS_CREATE)
     @Transactional
     override fun createVenueGroup(group: VenueGroupCreation): VenueGroup {
-        // 檢查是否已經存在相同名稱的場地組
+        logger.info("Creating venue group with name: ${group.name}, isDefault: ${group.isDefault}")
+
+        // Check if venue group with same name already exists
         venueGroupRepository.findByName(group.name).getOrNull()?.let {
+            logger.warn("Venue group creation failed - name already exists: ${group.name}")
             throw VenueGroupAlreadyExists
         }
 
@@ -110,11 +116,13 @@ class DefaultVenueService(
             annotations = group.annotations
         )
 
-        return venueGroupRepository.save(venueGroup)
+        val savedVenueGroup = venueGroupRepository.save(venueGroup)
+        logger.info("Venue group created successfully - ID: ${savedVenueGroup.id}, name: ${savedVenueGroup.name}")
+        return savedVenueGroup
     }
 
     /**
-     * 查詢場地組
+     * Query venue group by ID
      */
     @Transactional(readOnly = true)
     override fun getVenueGroup(venueGroupId: UUID): VenueGroup {
@@ -122,7 +130,7 @@ class DefaultVenueService(
     }
 
     /**
-     * 根據名稱查詢場地組
+     * Query venue group by name
      */
     @Transactional(readOnly = true)
     override fun getVenueGroupByName(name: String): VenueGroup {
@@ -130,7 +138,7 @@ class DefaultVenueService(
     }
 
     /**
-     * 查詢預設場地組
+     * Query default venue group
      */
     @Transactional(readOnly = true)
     override fun getDefaultVenueGroup(): VenueGroup {
@@ -138,7 +146,7 @@ class DefaultVenueService(
     }
 
     /**
-     * 查詢所有場地組
+     * Query all venue groups
      */
     @Transactional(readOnly = true)
     override fun getAllVenueGroups(): List<VenueGroup> {
@@ -146,7 +154,7 @@ class DefaultVenueService(
     }
 
     /**
-     * 更新場地組信息
+     * Update venue group information
      */
     @Transactional
     override fun updateVenueGroup(venueGroupId: UUID, update: VenueGroupUpdate): VenueGroup {
@@ -161,7 +169,7 @@ class DefaultVenueService(
     }
 
     /**
-     * 刪除場地組（會一併刪除關聯的場地）
+     * Delete venue group (will also delete associated venues)
      */
     @Transactional
     override fun deleteVenueGroup(venueGroupId: UUID) {
@@ -170,17 +178,22 @@ class DefaultVenueService(
     }
 
     /**
-     * 創建場地，使用數據庫層級參照完整性
+     * Create venue with database-level referential integrity
      */
     @Require(Permission.VENUES_CREATE)
     @Transactional
     override fun createVenue(venue: VenueCreation): Venue {
-        // 獲取場地組實體，如果不存在會拋出異常
-        val venueGroup = venueGroupRepository.findById(venue.venueGroupId).getOrNull()
-            ?: throw VenueGroupNotFound
+        logger.info("Creating venue: ${venue.name} in group: ${venue.venueGroupId}")
 
-        // 檢查是否已經存在相同名稱的場地
+        // Get venue group entity, throw exception if not found
+        val venueGroup = venueGroupRepository.findById(venue.venueGroupId).getOrNull() ?: run {
+            logger.error("Venue creation failed - venue group not found: ${venue.venueGroupId}")
+            throw VenueGroupNotFound
+        }
+
+        // Check if venue with same name already exists
         venueRepository.findByName(venue.name).getOrNull()?.let {
+            logger.warn("Venue creation failed - name already exists: ${venue.name}")
             throw VenueAlreadyExists
         }
 
@@ -198,11 +211,13 @@ class DefaultVenueService(
             annotations = venue.annotations
         )
 
-        return venueRepository.save(newVenue)
+        val savedVenue = venueRepository.save(newVenue)
+        logger.info("Venue created successfully - ID: ${savedVenue.id}, name: ${savedVenue.name}")
+        return savedVenue
     }
 
     /**
-     * 查詢場地
+     * Query venue
      */
     @Require(Permission.VENUES_READ)
     @Transactional(readOnly = true)
@@ -211,7 +226,7 @@ class DefaultVenueService(
     }
 
     /**
-     * 根據名稱查詢場地
+     * Query venue by name
      */
     @Require(Permission.VENUES_READ)
     @Transactional(readOnly = true)
@@ -220,7 +235,7 @@ class DefaultVenueService(
     }
 
     /**
-     * 根據場地組查詢所有場地
+     * Query all venues by venue group
      */
     @Require(Permission.VENUES_READ)
     @Transactional(readOnly = true)
@@ -238,7 +253,7 @@ class DefaultVenueService(
     }
 
     /**
-     * 搜尋場地（支援分頁和多條件查詢）
+     * Search venues (supports pagination and multiple query criteria)
      */
     @Require(Permission.VENUES_READ)
     @Transactional(readOnly = true)
@@ -256,7 +271,7 @@ class DefaultVenueService(
     }
 
     /**
-     * 更新場地信息
+     * Update venue information
      */
     @Require(Permission.VENUES_UPDATE)
     @Transactional
@@ -280,7 +295,7 @@ class DefaultVenueService(
     }
 
     /**
-     * 更新場地排程配置
+     * Update venue schedule configuration
      */
     @Require(Permission.VENUES_UPDATE)
     @Transactional
@@ -294,7 +309,7 @@ class DefaultVenueService(
     }
 
     /**
-     * 移動場地到其他場地組
+     * Move venue to different venue group
      */
     @Require(Permission.VENUES_UPDATE)
     @Transactional
@@ -308,7 +323,7 @@ class DefaultVenueService(
     }
 
     /**
-     * 刪除場地
+     * Delete venue
      */
     @Require(Permission.VENUES_DELETE)
     @Transactional

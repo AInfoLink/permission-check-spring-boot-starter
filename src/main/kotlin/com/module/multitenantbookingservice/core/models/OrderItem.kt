@@ -1,5 +1,6 @@
 package com.module.multitenantbookingservice.core.models
 
+import com.module.multitenantbookingservice.security.permission.HasResourceOwner
 import jakarta.persistence.*
 import org.hibernate.annotations.CreationTimestamp
 import org.hibernate.annotations.UpdateTimestamp
@@ -34,4 +35,8 @@ class OrderItem(
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     val updatedAt: Instant
-)
+): HasResourceOwner {
+    override fun getResourceOwnerId(): String {
+        return order.getResourceOwnerId()
+    }
+}
