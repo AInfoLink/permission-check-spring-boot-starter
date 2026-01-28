@@ -42,7 +42,9 @@ class BookingTimeSlotConfig(
             val slotTimeRange = slot.asTimeRange()
             val isOverlap = slotTimeRange.isOverlapWithAllowOvernight(timeSlotRange)
             if (isOverlap) {
-                throw TimeSlotOverlap
+                throw TimeSlotOverlap.withDetails(
+                    "New time slot [${timeSlot.startTime} - ${timeSlot.endTime}] overlaps with existing slot [${slot.startTime} - ${slot.endTime}]"
+                )
             }
         }
         timeSlots.add(timeSlot)
