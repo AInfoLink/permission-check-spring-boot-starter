@@ -1,7 +1,7 @@
 package com.module.multitenantbookingservice.core.models
 
 import com.module.multitenantbookingservice.security.permission.HasResourceOwner
-import com.module.multitenantbookingservice.security.repository.model.User
+import com.module.multitenantbookingservice.security.model.User
 import jakarta.persistence.*
 import org.hibernate.annotations.CreationTimestamp
 import org.hibernate.annotations.UpdateTimestamp

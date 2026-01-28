@@ -13,7 +13,7 @@ import com.module.multitenantbookingservice.security.InvalidAmountForCategory
 import com.module.multitenantbookingservice.security.annotation.Permission
 import com.module.multitenantbookingservice.security.annotation.Require
 import com.module.multitenantbookingservice.security.repository.UserRepository
-import com.module.multitenantbookingservice.security.repository.model.User
+import com.module.multitenantbookingservice.security.model.User
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service

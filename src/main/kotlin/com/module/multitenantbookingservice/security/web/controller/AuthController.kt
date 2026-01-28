@@ -1,6 +1,6 @@
 package com.module.multitenantbookingservice.security.web.controller
 
-import com.module.multitenantbookingservice.security.repository.model.User
+import com.module.multitenantbookingservice.security.model.User
 import com.module.multitenantbookingservice.security.service.AuthService
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse

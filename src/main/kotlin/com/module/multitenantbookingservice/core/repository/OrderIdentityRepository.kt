@@ -2,7 +2,7 @@ package com.module.multitenantbookingservice.core.repository
 
 import com.module.multitenantbookingservice.core.models.IdentityType
 import com.module.multitenantbookingservice.core.models.OrderIdentity
-import com.module.multitenantbookingservice.security.repository.model.User
+import com.module.multitenantbookingservice.security.model.User
 import org.springframework.data.repository.ListCrudRepository
 import org.springframework.stereotype.Repository
 import java.util.*

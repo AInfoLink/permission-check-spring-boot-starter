@@ -3,7 +3,7 @@ package com.module.multitenantbookingservice.security.aop
 import com.module.multitenantbookingservice.security.annotation.Require
 import com.module.multitenantbookingservice.security.annotation.extractPermissions
 import com.module.multitenantbookingservice.security.permission.PermissionEvaluator
-import com.module.multitenantbookingservice.security.repository.model.User
+import com.module.multitenantbookingservice.security.model.User
 import com.module.multitenantbookingservice.utils.Safe
 import org.aspectj.lang.ProceedingJoinPoint
 import org.aspectj.lang.annotation.Around

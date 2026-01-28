@@ -1,6 +1,6 @@
 package com.module.multitenantbookingservice.core.models
 
-import com.module.multitenantbookingservice.security.repository.model.User
+import com.module.multitenantbookingservice.security.model.User
 import com.module.multitenantbookingservice.security.permission.HasResourceOwner
 import jakarta.persistence.*
 import java.time.LocalDateTime
@@ -53,7 +53,7 @@ class UserProfile(
     @Column(name = "wallet_balance", nullable = false)
     var walletBalance: Int = 0,
 
-): HasResourceOwner {
+    ): HasResourceOwner {
 
     fun addTenantRole(role: TenantRole) {
         tenantRoles.add(role)

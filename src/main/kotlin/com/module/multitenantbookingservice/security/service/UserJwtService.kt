@@ -1,6 +1,6 @@
 package com.module.multitenantbookingservice.security.service
 
-import com.module.multitenantbookingservice.security.repository.model.User
+import com.module.multitenantbookingservice.security.model.User
 import com.module.multitenantbookingservice.security.config.SecurityProperties
 import jakarta.annotation.PostConstruct
 import org.springframework.stereotype.Service

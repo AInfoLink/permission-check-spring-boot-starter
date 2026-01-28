@@ -1,7 +1,7 @@
 package com.module.multitenantbookingservice.security.service
 
 import com.module.multitenantbookingservice.security.repository.UserRepository
-import com.module.multitenantbookingservice.security.repository.model.User
+import com.module.multitenantbookingservice.security.model.User
 import com.module.multitenantbookingservice.security.UserNotFound
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Pageable
