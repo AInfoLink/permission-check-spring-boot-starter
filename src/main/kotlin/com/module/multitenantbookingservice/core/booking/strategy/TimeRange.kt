@@ -57,7 +57,8 @@ data class TimeRange(
      * Split multi-day time range into daily segments
      *
      * Same day: [2024-01-01 10:00, 2024-01-01 12:00) -> [[2024-01-01 10:00, 2024-01-01 12:00)]
-     * Multi-day: [2024-01-01 23:00, 2024-01-02 01:00) -> [[2024-01-01 23:00, 2024-01-02 00:00), [2024-01-02 00:00, 2024-01-02 01:00)]
+     * Two-day: [2024-01-01 23:00, 2024-01-02 01:00) -> [[2024-01-01 23:00, 2024-01-02 00:00), [2024-01-02 00:00, 2024-01-02 01:00)]
+     * Three-day: [2024-01-01 23:00, 2024-01-03 02:00) -> [[2024-01-01 23:00, 2024-01-02 00:00), [2024-01-02 00:00, 2024-01-03 00:00), [2024-01-03 00:00, 2024-01-03 02:00)]
      */
     fun expandOvernight(): List<TimeRange> {
         if (!isMultiDay()) {
@@ -70,7 +71,7 @@ data class TimeRange(
         val endDate = endTime.toLocalDate()
 
         while (currentStart.toLocalDate() < endDate) {
-            val currentEndOfDay = currentStart.toLocalDate().atTime(23, 59, 59, 999_999_999)
+            // example: currentStart = 2024-01-01 23:00 -> 2024-01-01, would get 2024-01-02 00:00
             val nextDayStart = currentStart.toLocalDate().plusDays(1).atStartOfDay()
 
             // Add segment for current day (from currentStart to end of day)
