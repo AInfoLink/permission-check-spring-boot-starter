@@ -24,10 +24,8 @@ class TenantInterceptor(
         val tenantId = tenantResolver.resolveTenantIdentifier(request)
         if (tenantId.isNullOrBlank()) {
             logger.warn("No tenant ID resolved for request: $method $requestUri - using default context")
-        } else {
-            logger.debug("Tenant context set for request: $method $requestUri - tenant: $tenantId")
         }
-
+        logger.debug("Tenant context set for request: $method $requestUri - tenant: $tenantId")
         TenantContextHolder.setTenantId(tenantId)
         return true
     }
