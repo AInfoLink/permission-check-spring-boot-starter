@@ -5,7 +5,6 @@ class PricingStrategyBasePrice(override var priority: Int) : PricingStrategy {
         get() = Strategy.BASE_PRICE.strategyName
 
     override fun calculatePrice(context: PricingContext, currentResult: PricingResult): PricingResult {
-        context.basePrice = 150.0 // TODO: 應從場地配置或系統配置讀取
 
         return currentResult
     }

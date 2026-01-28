@@ -4,7 +4,6 @@ import com.module.multitenantbookingservice.security.model.User
 import com.module.multitenantbookingservice.core.models.Venue
 import org.springframework.stereotype.Service
 import java.time.Duration
-import java.time.LocalDateTime
 
 
 enum class Strategy(val strategyName: String) {
@@ -18,14 +17,13 @@ enum class Strategy(val strategyName: String) {
 data class PricingContext(
     val user: User,
     val venue: Venue,
-    val startTime: LocalDateTime,
-    val endTime: LocalDateTime,
-    var basePrice: Double? = null
+    val bookingTimeRange: TimeRange,
 ) {
-    val bookingDuration: Duration = Duration.between(startTime, endTime)
+    val bookingDuration: Duration = Duration.between(bookingTimeRange.startTime, bookingTimeRange.endTime)
 }
 
 data class PricingItemResult(
+    val timeRange: TimeRange,
     val itemName: String,
     val description: String,
     val price: Double

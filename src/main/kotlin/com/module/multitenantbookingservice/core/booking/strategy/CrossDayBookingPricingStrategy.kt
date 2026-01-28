@@ -2,6 +2,7 @@ package com.module.multitenantbookingservice.core.booking.strategy
 
 import org.springframework.stereotype.Component
 import java.time.Duration
+import java.time.LocalDate
 import java.time.LocalTime
 
 @Component
@@ -23,12 +24,13 @@ class CrossDayBookingPricingStrategy : PricingStrategy {
 
         // Cross-day booking, split into two time segment items
         val timeSegments = createCrossDayTimeSegments(context)
-
         timeSegments.forEach { segment ->
-            newItems.add(PricingItemResult(
-                itemName = "Booking Period (${segment.dayLabel})",
-                description = "${segment.dayLabel} ${segment.startTime}-${segment.endTime} (${formatDuration(segment.duration)})",
-                price = 0.0 // Just splitting, no pricing, let other strategies handle pricing
+            newItems.add(
+                PricingItemResult(
+                    itemName = "Booking Period (${segment.dayLabel})",
+                    description = "${segment.dayLabel} ${segment.startTime}-${segment.endTime} (${formatDuration(segment.duration)})",
+                    timeRange = segment.asTimeRange(),
+                    price = 0.0 // Price to be calculated by other strategies
             ))
         }
 
@@ -43,8 +45,8 @@ class CrossDayBookingPricingStrategy : PricingStrategy {
      * 10:00-12:00 = same day
      */
     private fun isCrossDayBooking(context: PricingContext): Boolean {
-        val startTime = context.startTime.toLocalTime()
-        val endTime = context.endTime.toLocalTime()
+        val startTime = context.bookingTimeRange.startTime.toLocalTime()
+        val endTime = context.bookingTimeRange.endTime.toLocalTime()
 
         return startTime >= endTime
     }
@@ -56,8 +58,13 @@ class CrossDayBookingPricingStrategy : PricingStrategy {
      * -> [23:00-24:00 (Day 1), 00:00-01:00 (Day 2)]
      */
     private fun createCrossDayTimeSegments(context: PricingContext): List<TimeSegment> {
-        val startTime = context.startTime.toLocalTime()
-        val endTime = context.endTime.toLocalTime()
+        val bookingStartTime = context.bookingTimeRange.startTime
+        val bookingEndTime = context.bookingTimeRange.endTime
+
+        val startTime = bookingStartTime.toLocalTime()
+        val endTime = bookingEndTime.toLocalTime()
+        val startDate = bookingStartTime.toLocalDate()
+        val endDate = bookingEndTime.toLocalDate()
 
         // First segment: start time to midnight
         val firstSegmentEnd = LocalTime.MAX // 23:59:59.999999999 (close to 24:00)
@@ -72,13 +79,15 @@ class CrossDayBookingPricingStrategy : PricingStrategy {
                 startTime = startTime,
                 endTime = firstSegmentEnd,
                 duration = firstSegmentDuration,
-                dayLabel = "Day 1"
+                dayLabel = "Day 1",
+                date = startDate
             ),
             TimeSegment(
                 startTime = secondSegmentStart,
                 endTime = endTime,
                 duration = secondSegmentDuration,
-                dayLabel = "Day 2"
+                dayLabel = "Day 2",
+                date = endDate
             )
         )
     }
@@ -93,9 +102,14 @@ class CrossDayBookingPricingStrategy : PricingStrategy {
      * Internal class: Time segment information
      */
     private data class TimeSegment(
+        val date: LocalDate,
         val startTime: LocalTime,
         val endTime: LocalTime,
         val duration: Duration,
         val dayLabel: String
-    )
+    ) {
+        fun asTimeRange(): TimeRange {
+            return TimeRange(date, startTime, endTime)
+        }
+    }
 }
