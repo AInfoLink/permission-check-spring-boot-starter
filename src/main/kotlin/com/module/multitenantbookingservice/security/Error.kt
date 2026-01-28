@@ -53,6 +53,7 @@ val OrderIdentityAlreadyExists = AppDomainException("OrderIdentityAlreadyExists"
 // 400 Bad Request - OrderItem business rule validation
 val InvalidAmountForCategory = AppDomainException("InvalidAmountForCategory", statusCode = HttpStatus.BAD_REQUEST)
 val OrderAlreadyPaidModificationDenied = AppDomainException("OrderAlreadyPaidModificationDenied", statusCode = HttpStatus.BAD_REQUEST)
+val BasePriceNotSet = AppDomainException("BasePriceNotSet", statusCode = HttpStatus.BAD_REQUEST)
 
 // 422 Unprocessable Entity - OrderItem bulk operation failures
 val BulkUpdatePartialFailure = AppDomainException("BulkUpdatePartialFailure", statusCode = HttpStatus.UNPROCESSABLE_ENTITY)

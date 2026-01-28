@@ -5,17 +5,8 @@ class PricingStrategyBasePrice(override var priority: Int) : PricingStrategy {
         get() = Strategy.BASE_PRICE.strategyName
 
     override fun calculatePrice(context: PricingContext, currentResult: PricingResult): PricingResult {
-        // Base price strategy: sets the foundation price
-        val basePriceItem = PricingItemResult(
-            itemName = "Base Price",
-            description = "Standard booking fee",
-            price = 100.0 // TODO: Should be configurable
-        )
+        context.basePrice = 150.0 // TODO: 應從場地配置或系統配置讀取
 
-        // Add to current items (usually empty for base price, but allows chaining)
-        val newItems = currentResult.items.toMutableList()
-        newItems.add(basePriceItem)
-
-        return PricingResult(newItems)
+        return currentResult
     }
 }

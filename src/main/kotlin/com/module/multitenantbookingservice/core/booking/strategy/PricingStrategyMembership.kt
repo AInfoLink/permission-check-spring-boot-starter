@@ -17,7 +17,7 @@ class PricingStrategyMembership(override var priority: Int) : PricingStrategy {
         )
 
         // Add discount to existing items
-        val newItems = currentResult.items.toMutableList()
+        val newItems = currentResult.items
         newItems.add(membershipDiscountItem)
 
         return PricingResult(newItems)

@@ -13,7 +13,7 @@ class PricingStrategyOverride(override var priority: Int = Int.MAX_VALUE) : Pric
         )
 
         // Return completely new result, ignoring previous calculations
-        return PricingResult(listOf(overrideItem))
+        return PricingResult(mutableSetOf(overrideItem))
     }
 
 }

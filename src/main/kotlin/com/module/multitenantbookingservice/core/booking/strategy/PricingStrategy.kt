@@ -1,10 +1,14 @@
 package com.module.multitenantbookingservice.core.booking.strategy
 
 import com.module.multitenantbookingservice.security.model.User
+import com.module.multitenantbookingservice.core.models.Venue
 import org.springframework.stereotype.Service
+import java.time.Duration
+import java.time.LocalDateTime
 
 
 enum class Strategy(val strategyName: String) {
+    CROSS_DAY_HELPER("CrossDayHelper"),
     BASE_PRICE("BasePrice"),
     TIME_BASED("TimeBased"),
     MEMBERSHIP("Membership"),
@@ -12,8 +16,14 @@ enum class Strategy(val strategyName: String) {
 }
 
 data class PricingContext(
-    val user: User
-)
+    val user: User,
+    val venue: Venue,
+    val startTime: LocalDateTime,
+    val endTime: LocalDateTime,
+    var basePrice: Double? = null
+) {
+    val bookingDuration: Duration = Duration.between(startTime, endTime)
+}
 
 data class PricingItemResult(
     val itemName: String,
@@ -22,7 +32,7 @@ data class PricingItemResult(
 )
 
 data class PricingResult(
-    val items: Iterable<PricingItemResult>
+    val items: MutableSet<PricingItemResult>
 ) {
     fun getTotalAmount(): Double {
         return items.sumOf { it.price }
@@ -55,7 +65,7 @@ class DefaultPricingStrategyEngine : PricingStrategyEngine {
         val sortedStrategies = strategies.sortedBy { it.priority }
 
         // Start with empty result and let each strategy build upon it
-        var currentResult = PricingResult(emptyList())
+        var currentResult = PricingResult(mutableSetOf())
 
         for (strategy in sortedStrategies) {
             currentResult = strategy.calculatePrice(context, currentResult)
