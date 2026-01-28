@@ -21,6 +21,7 @@ val UserNotFound = AppDomainException("UserNotFound", statusCode = HttpStatus.NO
 val UserProfileNotCreated = AppDomainException("UserProfileNotCreated", statusCode = HttpStatus.NOT_FOUND)
 val VenueNotFound = AppDomainException("VenueNotFound", statusCode = HttpStatus.NOT_FOUND)
 val VenueGroupNotFound = AppDomainException("VenueGroupNotFound", statusCode = HttpStatus.NOT_FOUND)
+val TenantRoleNotFound = AppDomainException("TenantRoleNotFound", statusCode = HttpStatus.NOT_FOUND)
 
 // 409 Conflict - Resource already exists
 val UserProfileAlreadyExists = AppDomainException("UserProfileAlreadyExists", statusCode = HttpStatus.CONFLICT)
@@ -51,6 +52,7 @@ val OrderIdentityAlreadyExists = AppDomainException("OrderIdentityAlreadyExists"
 
 // 400 Bad Request - OrderItem business rule validation
 val InvalidAmountForCategory = AppDomainException("InvalidAmountForCategory", statusCode = HttpStatus.BAD_REQUEST)
+val OrderAlreadyPaidModificationDenied = AppDomainException("OrderAlreadyPaidModificationDenied", statusCode = HttpStatus.BAD_REQUEST)
 
 // 422 Unprocessable Entity - OrderItem bulk operation failures
 val BulkUpdatePartialFailure = AppDomainException("BulkUpdatePartialFailure", statusCode = HttpStatus.UNPROCESSABLE_ENTITY)

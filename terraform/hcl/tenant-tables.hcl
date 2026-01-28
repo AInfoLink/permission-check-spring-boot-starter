@@ -11,7 +11,7 @@ schema "tenant" {
 }
 
 
-table "item_categories" {
+table "order_item_categories" {
   schema = schema.tenant
   column "id" {
     null = false
@@ -152,7 +152,7 @@ table "order_items" {
   }
   foreign_key "fk_order_items_category_id" {
     columns     = [column.category_id]
-    ref_columns = [table.item_categories.column.id]
+    ref_columns = [table.order_item_categories.column.id]
     on_update   = NO_ACTION
     on_delete   = NO_ACTION
   }
@@ -321,6 +321,41 @@ table "user_profiles" {
   }
 }
 
+table "tenant_roles" {
+  schema = schema.tenant
+
+  column "role_id" {
+    null = false
+    type = uuid
+  }
+  column "role_name" {
+    null = false
+    type = character_varying(100)
+  }
+  column "role_description" {
+    null = true
+    type = character_varying(500)
+  }
+  column "created_at" {
+    null = false
+    type = timestamptz
+  }
+  column "updated_at" {
+    null = false
+    type = timestamptz
+  }
+  column "permissions" {
+    null = true
+    type = text
+  }
+  primary_key {
+    columns = [column.role_id]
+  }
+  index "idx_tenant_roles_name" {
+    columns = [column.role_name]
+  }
+}
+
 table "user_profile_tenant_roles" {
   schema = schema.tenant
 
@@ -328,15 +363,24 @@ table "user_profile_tenant_roles" {
     null = false
     type = uuid
   }
-  column "role" {
-    null = true
-    type = character_varying(255)
+  column "role_id" {
+    null = false
+    type = uuid
+  }
+  primary_key {
+    columns = [column.user_profile_id, column.role_id]
   }
   foreign_key "fk_user_profile_tenant_roles_user_profile_id" {
     columns     = [column.user_profile_id]
     ref_columns = [table.user_profiles.column.id]
     on_update   = NO_ACTION
-    on_delete   = NO_ACTION
+    on_delete   = CASCADE
+  }
+  foreign_key "fk_user_profile_tenant_roles_role_id" {
+    columns     = [column.role_id]
+    ref_columns = [table.tenant_roles.column.role_id]
+    on_update   = NO_ACTION
+    on_delete   = CASCADE
   }
 }
 

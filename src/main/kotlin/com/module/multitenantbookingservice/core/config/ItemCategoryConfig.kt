@@ -1,5 +1,6 @@
 package com.module.multitenantbookingservice.core.config
 
+import com.module.multitenantbookingservice.core.models.OperationType
 import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -17,7 +18,7 @@ class ItemCategoryConfig(
         var code: String = "",
         var name: String = "",
         var description: String = "",
-        var operationType: String = "CHARGE"  // 預設為收費操作
+        var operationType: String = OperationType.CHARGE.name
     )
 
     data class CategoryConfigRoot(

@@ -24,6 +24,7 @@ resource "null_resource" "diff_tenant_schemas" {
 
   triggers = {
     sha = local.tables_sha
+    timestamp = timestamp()
   }
 
   provisioner "local-exec" {
@@ -44,6 +45,7 @@ resource "null_resource" "single_transaction_file" {
 
   triggers = {
     sha = local.tables_sha
+    timestamp = timestamp()
   }
 
   provisioner "local-exec" {

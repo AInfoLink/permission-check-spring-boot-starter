@@ -1,5 +1,6 @@
 package com.module.multitenantbookingservice.security.web.controller
 import com.module.multitenantbookingservice.monitoring.otel.TraceUtils
+import com.module.multitenantbookingservice.security.aop.PermissionDeniedException
 import jakarta.servlet.http.HttpServletRequest
 import org.slf4j.LoggerFactory
 import org.springframework.core.annotation.Order
@@ -45,6 +46,24 @@ class ControllerAdvise {
             TraceUtils.getTraceId()
         )
         return ResponseEntity(errorResponse, HttpStatus.BAD_REQUEST)
+    }
+
+    @ExceptionHandler(PermissionDeniedException::class)
+    fun permissionDeniedExceptionHandler(
+        exception: PermissionDeniedException,
+        request: HttpServletRequest
+    ): ResponseEntity<ErrorResponse> {
+        val traceId = TraceUtils.getTraceId()
+        logger.warn("Permission denied on ${request.method} ${request.requestURI} - Error: ${exception.message}, TraceId: $traceId")
+
+        val errorResponse = ErrorResponse(
+            System.currentTimeMillis(),
+            HttpStatus.FORBIDDEN,
+            exception.message,
+            request.requestURI,
+            traceId
+        )
+        return ResponseEntity(errorResponse, HttpStatus.FORBIDDEN)
     }
 
     @Order(Int.MAX_VALUE)

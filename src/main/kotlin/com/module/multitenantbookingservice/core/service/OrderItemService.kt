@@ -1,34 +1,22 @@
 package com.module.multitenantbookingservice.core.service
 
-import com.module.multitenantbookingservice.core.models.ItemCategory
 import com.module.multitenantbookingservice.core.models.OrderItem
-import com.module.multitenantbookingservice.core.repository.ItemCategoryRepository
+import com.module.multitenantbookingservice.core.models.OrderItemCategory
+import com.module.multitenantbookingservice.core.repository.OrderItemCategoryRepository
 import com.module.multitenantbookingservice.core.repository.OrderItemRepository
 import com.module.multitenantbookingservice.security.*
+import com.module.multitenantbookingservice.security.annotation.Permission
+import com.module.multitenantbookingservice.security.annotation.Require
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.Instant
 import java.util.*
 import kotlin.jvm.optionals.getOrNull
 
-data class OrderItemCreation(
-    val description: String,
-    val amount: Int,
-    val categoryId: UUID
-)
 
 data class OrderItemUpdate(
     val description: String? = null,
     val amount: Int? = null,
     val categoryId: UUID? = null
-)
-
-data class OrderItemAmountUpdate(
-    val amount: Int
-)
-
-data class OrderItemCategoryUpdate(
-    val categoryId: UUID
 )
 
 data class BulkOrderItemUpdate(
@@ -37,14 +25,12 @@ data class BulkOrderItemUpdate(
 )
 
 interface OrderItemService {
-    fun createOrderItem(item: OrderItemCreation): OrderItem
+    fun validateAmountForCategory(category: OrderItemCategory, amount: Int)
     fun getOrderItem(itemId: UUID): OrderItem
     fun getOrderItemsByCategory(categoryId: UUID): List<OrderItem>
-    fun getOrderItemsByCategory(category: ItemCategory): List<OrderItem>
+    fun getOrderItemsByCategory(category: OrderItemCategory): List<OrderItem>
     fun getAllOrderItems(): List<OrderItem>
     fun updateOrderItem(itemId: UUID, update: OrderItemUpdate): OrderItem
-    fun updateOrderItemAmount(itemId: UUID, amountUpdate: OrderItemAmountUpdate): OrderItem
-    fun updateOrderItemCategory(itemId: UUID, categoryUpdate: OrderItemCategoryUpdate): OrderItem
     fun bulkUpdateOrderItems(bulkUpdate: BulkOrderItemUpdate): List<OrderItem>
     fun deleteOrderItem(itemId: UUID)
     fun validateOrderItemAmount(categoryId: UUID, amount: Int): Boolean
@@ -54,38 +40,12 @@ interface OrderItemService {
 @Service
 class DefaultOrderItemService(
     private val orderItemRepository: OrderItemRepository,
-    private val itemCategoryRepository: ItemCategoryRepository
+    private val orderItemCategoryRepository: OrderItemCategoryRepository
 ): OrderItemService {
-
-    /**
-     * 創建訂單項目
-     */
-    @Transactional
-    override fun createOrderItem(item: OrderItemCreation): OrderItem {
-        val category = itemCategoryRepository.findById(item.categoryId).getOrNull()
-            ?: throw ItemCategoryNotFound
-
-        // 驗證金額是否符合分類的操作類型
-        if (!category.validateAmountForOperationType(item.amount.toDouble())) {
-            throw InvalidAmountForCategory.withDetails(
-                "Amount ${item.amount} is invalid for category ${category.code} with operation type ${category.operationType}"
-            )
-        }
-
-        val orderItem = OrderItem(
-            description = item.description,
-            amount = item.amount,
-            category = category,
-            createdAt = Instant.now(),
-            updatedAt = Instant.now()
-        )
-
-        return orderItemRepository.save(orderItem)
-    }
-
     /**
      * 查詢訂單項目
      */
+    @Require(Permission.ORDER_ITEMS_READ)
     @Transactional(readOnly = true)
     override fun getOrderItem(itemId: UUID): OrderItem {
         return orderItemRepository.findById(itemId).getOrNull() ?: throw OrderItemNotFound
@@ -94,6 +54,7 @@ class DefaultOrderItemService(
     /**
      * 根據分類 ID 查詢訂單項目
      */
+    @Require(Permission.ORDER_ITEMS_READ)
     @Transactional(readOnly = true)
     override fun getOrderItemsByCategory(categoryId: UUID): List<OrderItem> {
         return orderItemRepository.findByCategoryId(categoryId)
@@ -102,14 +63,16 @@ class DefaultOrderItemService(
     /**
      * 根據分類實體查詢訂單項目
      */
+    @Require(Permission.ORDER_ITEMS_READ)
     @Transactional(readOnly = true)
-    override fun getOrderItemsByCategory(category: ItemCategory): List<OrderItem> {
+    override fun getOrderItemsByCategory(category: OrderItemCategory): List<OrderItem> {
         return orderItemRepository.findByCategory(category)
     }
 
     /**
      * 查詢所有訂單項目
      */
+    @Require(Permission.ORDER_ITEMS_READ)
     @Transactional(readOnly = true)
     override fun getAllOrderItems(): List<OrderItem> {
         return orderItemRepository.findAll()
@@ -118,6 +81,7 @@ class DefaultOrderItemService(
     /**
      * 更新訂單項目信息
      */
+    @Require(Permission.ORDER_ITEMS_UPDATE)
     @Transactional
     override fun updateOrderItem(itemId: UUID, update: OrderItemUpdate): OrderItem {
         val orderItem = orderItemRepository.findById(itemId).getOrNull() ?: throw OrderItemNotFound
@@ -132,18 +96,17 @@ class DefaultOrderItemService(
 
         // 更新分類
         update.categoryId?.let { newCategoryId ->
-            val newCategory = itemCategoryRepository.findById(newCategoryId).getOrNull()
+            val newCategory = orderItemCategoryRepository.findById(newCategoryId).getOrNull()
                 ?: throw ItemCategoryNotFound
             orderItem.category = newCategory
         }
 
         // 如果有金額更新，驗證新金額是否符合分類規則
         if (update.amount != null) {
-            if (!orderItem.category.validateAmountForOperationType(orderItem.amount.toDouble())) {
-                throw InvalidAmountForCategory.withDetails(
-                    "Amount ${orderItem.amount} is invalid for category ${orderItem.category.code} with operation type ${orderItem.category.operationType}"
-                )
+            if (orderItem.order.isPaid()) {
+                throw OrderAlreadyPaidModificationDenied.withDetails("Cannot modify amount of order item in a paid order")
             }
+            validateAmountForCategory(orderItem.category, orderItem.amount)
         }
 
         return orderItemRepository.save(orderItem)
@@ -152,6 +115,7 @@ class DefaultOrderItemService(
     /**
      * 刪除訂單項目
      */
+    @Require(Permission.ORDER_ITEMS_DELETE)
     @Transactional
     override fun deleteOrderItem(itemId: UUID) {
         val orderItem = orderItemRepository.findById(itemId).getOrNull() ?: return
@@ -161,62 +125,34 @@ class DefaultOrderItemService(
     /**
      * 驗證訂單項目金額是否符合分類規則
      */
+    @Require(Permission.ORDER_ITEMS_READ)
     override fun validateOrderItemAmount(categoryId: UUID, amount: Int): Boolean {
-        val category = itemCategoryRepository.findById(categoryId).getOrNull()
+        val category = orderItemCategoryRepository.findById(categoryId).getOrNull()
             ?: throw ItemCategoryNotFound
-        return category.validateAmountForOperationType(amount.toDouble())
+        return category.validateAmountForOperationType(amount)
+    }
+
+    override fun validateAmountForCategory(category: OrderItemCategory, amount: Int) {
+        if (!category.validateAmountForOperationType(amount)) {
+            throw InvalidAmountForCategory.withDetails(
+                "Amount $amount is invalid for category ${category.code} with operation type ${category.operationType}"
+            )
+        }
     }
 
     /**
      * 根據分類和金額範圍查詢訂單項目
      */
+    @Require(Permission.ORDER_ITEMS_READ)
     @Transactional(readOnly = true)
     override fun getOrderItemsByCategoryAndAmountRange(categoryId: UUID, minAmount: Int, maxAmount: Int): List<OrderItem> {
         return orderItemRepository.findByCategoryId(categoryId)
             .filter { it.amount in minAmount..maxAmount }
     }
-
-    /**
-     * 更新訂單項目金額
-     */
-    @Transactional
-    override fun updateOrderItemAmount(itemId: UUID, amountUpdate: OrderItemAmountUpdate): OrderItem {
-        val orderItem = orderItemRepository.findById(itemId).getOrNull() ?: throw OrderItemNotFound
-
-        // 驗證新金額是否符合分類規則
-        if (!orderItem.category.validateAmountForOperationType(amountUpdate.amount.toDouble())) {
-            throw InvalidAmountForCategory.withDetails(
-                "Amount ${amountUpdate.amount} is invalid for category ${orderItem.category.code} with operation type ${orderItem.category.operationType}"
-            )
-        }
-
-        orderItem.amount = amountUpdate.amount
-        return orderItemRepository.save(orderItem)
-    }
-
-    /**
-     * 更新訂單項目分類
-     */
-    @Transactional
-    override fun updateOrderItemCategory(itemId: UUID, categoryUpdate: OrderItemCategoryUpdate): OrderItem {
-        val orderItem = orderItemRepository.findById(itemId).getOrNull() ?: throw OrderItemNotFound
-        val newCategory = itemCategoryRepository.findById(categoryUpdate.categoryId).getOrNull()
-            ?: throw ItemCategoryNotFound
-
-        // 驗證當前金額是否符合新分類的規則
-        if (!newCategory.validateAmountForOperationType(orderItem.amount.toDouble())) {
-            throw InvalidAmountForCategory.withDetails(
-                "Amount ${orderItem.amount} is invalid for category ${newCategory.code} with operation type ${newCategory.operationType}"
-            )
-        }
-
-        orderItem.category = newCategory
-        return orderItemRepository.save(orderItem)
-    }
-
     /**
      * 批量更新訂單項目
      */
+    @Require(Permission.ORDER_ITEMS_UPDATE)
     @Transactional
     override fun bulkUpdateOrderItems(bulkUpdate: BulkOrderItemUpdate): List<OrderItem> {
         val updatedItems = mutableListOf<OrderItem>()

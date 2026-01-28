@@ -1,9 +1,17 @@
 package com.module.multitenantbookingservice.core.service
 
-import com.module.multitenantbookingservice.core.models.*
+import com.module.multitenantbookingservice.core.models.BookingSlotType
+import com.module.multitenantbookingservice.core.models.Venue
+import com.module.multitenantbookingservice.core.models.VenueGroup
+import com.module.multitenantbookingservice.core.models.VenueScheduleConfig
 import com.module.multitenantbookingservice.core.repository.VenueGroupRepository
 import com.module.multitenantbookingservice.core.repository.VenueRepository
-import com.module.multitenantbookingservice.security.*
+import com.module.multitenantbookingservice.security.VenueAlreadyExists
+import com.module.multitenantbookingservice.security.VenueGroupAlreadyExists
+import com.module.multitenantbookingservice.security.VenueGroupNotFound
+import com.module.multitenantbookingservice.security.VenueNotFound
+import com.module.multitenantbookingservice.security.annotation.Permission
+import com.module.multitenantbookingservice.security.annotation.Require
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
@@ -87,6 +95,7 @@ class DefaultVenueService(
     /**
      * 創建場地組，確保名稱的唯一性
      */
+    @Require(Permission.VENUE_GROUPS_CREATE)
     @Transactional
     override fun createVenueGroup(group: VenueGroupCreation): VenueGroup {
         // 檢查是否已經存在相同名稱的場地組
@@ -163,6 +172,7 @@ class DefaultVenueService(
     /**
      * 創建場地，使用數據庫層級參照完整性
      */
+    @Require(Permission.VENUES_CREATE)
     @Transactional
     override fun createVenue(venue: VenueCreation): Venue {
         // 獲取場地組實體，如果不存在會拋出異常
@@ -194,6 +204,7 @@ class DefaultVenueService(
     /**
      * 查詢場地
      */
+    @Require(Permission.VENUES_READ)
     @Transactional(readOnly = true)
     override fun getVenue(venueId: UUID): Venue {
         return venueRepository.findById(venueId).getOrNull() ?: throw VenueNotFound
@@ -202,6 +213,7 @@ class DefaultVenueService(
     /**
      * 根據名稱查詢場地
      */
+    @Require(Permission.VENUES_READ)
     @Transactional(readOnly = true)
     override fun getVenueByName(name: String): Venue {
         return venueRepository.findByName(name).getOrNull() ?: throw VenueNotFound
@@ -210,6 +222,7 @@ class DefaultVenueService(
     /**
      * 根據場地組查詢所有場地
      */
+    @Require(Permission.VENUES_READ)
     @Transactional(readOnly = true)
     override fun getVenuesByGroup(venueGroupId: UUID): List<Venue> {
         return venueRepository.findByVenueGroupId(venueGroupId)
@@ -218,6 +231,7 @@ class DefaultVenueService(
     /**
      * 查詢所有場地
      */
+    @Require(Permission.VENUES_READ)
     @Transactional(readOnly = true)
     override fun getAllVenues(): List<Venue> {
         return venueRepository.findAll()
@@ -226,6 +240,7 @@ class DefaultVenueService(
     /**
      * 搜尋場地（支援分頁和多條件查詢）
      */
+    @Require(Permission.VENUES_READ)
     @Transactional(readOnly = true)
     override fun searchVenues(query: VenueQuery, pageable: Pageable): Page<Venue> {
         return venueRepository.searchVenues(
@@ -243,6 +258,7 @@ class DefaultVenueService(
     /**
      * 更新場地信息
      */
+    @Require(Permission.VENUES_UPDATE)
     @Transactional
     override fun updateVenue(venueId: UUID, update: VenueUpdate): Venue {
         val venue = venueRepository.findById(venueId).getOrNull() ?: throw VenueNotFound
@@ -266,6 +282,7 @@ class DefaultVenueService(
     /**
      * 更新場地排程配置
      */
+    @Require(Permission.VENUES_UPDATE)
     @Transactional
     fun updateVenueScheduleConfig(venueId: UUID, bookingSlotType: BookingSlotType?, isActive: Boolean?): Venue {
         val venue = venueRepository.findById(venueId).getOrNull() ?: throw VenueNotFound
@@ -279,6 +296,7 @@ class DefaultVenueService(
     /**
      * 移動場地到其他場地組
      */
+    @Require(Permission.VENUES_UPDATE)
     @Transactional
     fun moveVenueToGroup(venueId: UUID, newVenueGroupId: UUID): Venue {
         val venue = venueRepository.findById(venueId).getOrNull() ?: throw VenueNotFound
@@ -292,6 +310,7 @@ class DefaultVenueService(
     /**
      * 刪除場地
      */
+    @Require(Permission.VENUES_DELETE)
     @Transactional
     override fun deleteVenue(venueId: UUID) {
         val venue = venueRepository.findById(venueId).getOrNull() ?: return

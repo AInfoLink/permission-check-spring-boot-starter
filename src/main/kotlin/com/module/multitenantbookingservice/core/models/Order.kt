@@ -79,9 +79,10 @@ class Order(
     @Column(name = "updated_at", nullable = false)
     val updatedAt: Instant,
 
-    @OneToMany(cascade = [CascadeType.ALL], orphanRemoval = true)
-    @JoinColumn(name = "order_id", nullable = false)
+    @OneToMany(mappedBy = "order", cascade = [CascadeType.ALL], orphanRemoval = true)
     val items: MutableSet<OrderItem> = mutableSetOf()
 ) {
     val email: String get() = identity.email
+
+    fun isPaid(): Boolean = this.paymentStatus == PaymentStatus.PAID
 }

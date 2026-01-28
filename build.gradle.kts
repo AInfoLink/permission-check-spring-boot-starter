@@ -31,6 +31,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")
+    implementation("org.springframework.boot:spring-boot-starter-cache")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     runtimeOnly("org.postgresql:postgresql")
@@ -51,8 +53,9 @@ dependencies {
     implementation("io.netty:netty-codec-http:4.1.97.Final")
 
     implementation("io.opentelemetry:opentelemetry-api:1.42.1")
-
-
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0") // Check for latest version
+    // AOP
+    implementation("org.springframework.boot:spring-boot-starter-aop")
 
 }
 

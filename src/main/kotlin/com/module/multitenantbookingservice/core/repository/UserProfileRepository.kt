@@ -12,19 +12,39 @@ import java.util.*
 interface UserProfileRepository : JpaRepository<UserProfile, UUID> {
 
     /**
-     * 根據 User 實體查詢租戶層級的用戶檔案（使用 foreign key）
+     * 根據 User 實體查詢租戶層級的用戶檔案（使用跨 schema 查詢）
      */
-    fun findByUser(user: User): Optional<UserProfile>
+    @Query(value = """
+        SELECT up.*
+        FROM user_profiles up
+        INNER JOIN public.users u ON up.user_id = u.id
+        WHERE u.id = :#{#user.id}
+    """, nativeQuery = true)
+    fun findByUser(@Param("user") user: User): Optional<UserProfile>
 
     /**
-     * 檢查 User 在當前租戶是否存在
+     * 檢查 User 在當前租戶是否存在（使用跨 schema 查詢）
      */
-    fun existsByUser(user: User): Boolean
+    @Query(value = """
+        SELECT EXISTS(
+            SELECT 1
+            FROM user_profiles up
+            INNER JOIN public.users u ON up.user_id = u.id
+            WHERE u.id = :#{#user.id}
+        )
+    """, nativeQuery = true)
+    fun existsByUser(@Param("user") user: User): Boolean
 
     /**
      * 根據全域用戶ID查詢租戶層級的用戶檔案（向後兼容）
+     * 使用原生 SQL 進行跨 schema 查詢
      */
-    @Query("SELECT up FROM UserProfile up WHERE up.user.id = :userId")
+    @Query(value = """
+        SELECT up.*
+        FROM user_profiles up
+        INNER JOIN public.users u ON up.user_id = u.id
+        WHERE u.id = :userId
+    """, nativeQuery = true)
     fun findByUserId(@Param("userId") userId: UUID): Optional<UserProfile>
 
 }

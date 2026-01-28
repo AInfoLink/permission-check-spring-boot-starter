@@ -21,7 +21,11 @@ class OrderItem(
 
     @ManyToOne
     @JoinColumn(name = "category_id", nullable = false)
-    var category: ItemCategory,
+    var category: OrderItemCategory,
+
+    @ManyToOne
+    @JoinColumn(name = "order_id", nullable = false)
+    val order: Order,
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false)

@@ -1,4 +1,4 @@
-package com.module.multitenantbookingservice.core.web.controller
+package com.module.multitenantbookingservice.core.web.admin
 
 import com.module.multitenantbookingservice.core.models.UserProfile
 import com.module.multitenantbookingservice.core.service.*

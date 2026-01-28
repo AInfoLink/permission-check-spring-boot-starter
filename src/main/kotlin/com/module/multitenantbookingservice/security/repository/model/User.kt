@@ -1,6 +1,7 @@
 package com.module.multitenantbookingservice.security.repository.model
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.module.multitenantbookingservice.core.models.UserProfile
 import jakarta.persistence.*
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.userdetails.UserDetails

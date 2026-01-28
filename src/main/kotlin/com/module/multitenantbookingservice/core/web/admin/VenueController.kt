@@ -1,7 +1,7 @@
-package com.module.multitenantbookingservice.core.web.controller
+package com.module.multitenantbookingservice.core.web.admin
 
-import com.module.multitenantbookingservice.core.models.Venue
 import com.module.multitenantbookingservice.core.models.BookingSlotType
+import com.module.multitenantbookingservice.core.models.Venue
 import com.module.multitenantbookingservice.core.service.VenueCreation
 import com.module.multitenantbookingservice.core.service.VenueQuery
 import com.module.multitenantbookingservice.core.service.VenueService

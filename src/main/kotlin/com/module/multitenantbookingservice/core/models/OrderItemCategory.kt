@@ -19,14 +19,14 @@ enum class OperationType {
 
 @Entity
 @Table(
-    name = "item_categories",
+    name = "order_item_categories",
     indexes = [
         Index(name = "idx_item_categories_code", columnList = "code", unique = true),
         Index(name = "idx_item_categories_type", columnList = "type"),
         Index(name = "idx_item_categories_operation_type", columnList = "operation_type")
     ]
 )
-class ItemCategory(
+class OrderItemCategory(
     @Id
     @Column(name = "id", nullable = false)
     val id: UUID = UUID.randomUUID(),
@@ -64,11 +64,11 @@ class ItemCategory(
      * @param amount 交易金額
      * @return 如果金額符合操作類型則返回true
      */
-    fun validateAmountForOperationType(amount: Double): Boolean {
+    fun validateAmountForOperationType(amount: Int): Boolean {
         return when (operationType) {
             OperationType.CHARGE -> amount > 0    // 收費操作必須為正值
             OperationType.REFUND -> amount < 0    // 退費操作必須為負值
-            OperationType.NEUTRAL -> amount == 0.0 // 中性操作金額為零
+            OperationType.NEUTRAL -> amount == 0 // 中性操作金額為零
         }
     }
 

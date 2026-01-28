@@ -19,11 +19,11 @@ object TenantContextHolder {
 
     fun setTenantId(tenantId: String?) {
         logger.debug("Setting tenant ID in context: $tenantId")
-        contextHolder.set(tenantId ?: COMMON_SCHEMA)
+        contextHolder.set(tenantId)
     }
 
-    fun getTenantId(): String {
-        return contextHolder.get() ?: COMMON_SCHEMA
+    fun getTenantId(): String? {
+        return contextHolder.get()
     }
 
     fun clear() {

@@ -1,35 +1,45 @@
 package com.module.multitenantbookingservice.core.service
 
 import com.module.multitenantbookingservice.core.models.UserProfile
+import com.module.multitenantbookingservice.core.repository.TenantRoleRepository
 import com.module.multitenantbookingservice.core.repository.UserProfileRepository
+import com.module.multitenantbookingservice.security.TenantRoleNotFound
 import com.module.multitenantbookingservice.security.UserNotFound
 import com.module.multitenantbookingservice.security.UserProfileAlreadyExists
 import com.module.multitenantbookingservice.security.UserProfileNotCreated
+import com.module.multitenantbookingservice.security.annotation.Permission
+import com.module.multitenantbookingservice.security.annotation.Require
 import com.module.multitenantbookingservice.security.repository.UserRepository
+import org.springframework.context.ApplicationEvent
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.*
 import kotlin.jvm.optionals.getOrNull
 
 data class UserProfileCreation(
-    val tenantRoles: MutableSet<String> = mutableSetOf(),
+    val tenantRoleIds: MutableSet<UUID> = mutableSetOf(),
     val walletBalance: Int = 0,
     val isActive: Boolean = true
 )
 
 data class UserProfileUpdate(
-    val tenantRoles: MutableSet<String>? = null,
+    val tenantRoleIds: MutableSet<UUID>? = null,
     val walletBalance: Int? = null,
     val isActive: Boolean? = null
 )
 
 data class TenantRoleOperation(
-    val role: String
+    val roleId: UUID
 )
 
 data class WalletBalanceUpdate(
     val walletBalance: Int
 )
+
+data class PermissionReloadEvent(
+    val userId: UUID
+): ApplicationEvent(userId)
 
 interface UserProfileService {
     fun createUserProfile(userId: UUID, profile: UserProfileCreation): UserProfile
@@ -43,18 +53,24 @@ interface UserProfileService {
 
     // Wallet balance operation
     fun updateWalletBalance(userId: UUID, balanceUpdate: WalletBalanceUpdate): UserProfile
+
+    // Internal method for permission checking (no @Require annotation)
+    fun getUserProfileInternal(userId: UUID): UserProfile
 }
 
 @Service
 @Transactional
 class DefaultUserProfileService(
     private val userProfileRepository: UserProfileRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val tenantRoleRepository: TenantRoleRepository,
+    private val applicationEventPublisher: ApplicationEventPublisher
 ): UserProfileService {
 
     /**
      * 創建用戶檔案，使用數據庫層級參照完整性
      */
+    @Require(Permission.USERS_CREATE)
     @Transactional
     override fun createUserProfile(userId: UUID, profile: UserProfileCreation): UserProfile {
         // 獲取 User 實體，如果不存在會拋出異常
@@ -65,9 +81,16 @@ class DefaultUserProfileService(
             throw UserProfileAlreadyExists
         }
 
+        // 根據tenantRoleIds獲取TenantRole對象
+        val tenantRoles = if (profile.tenantRoleIds.isNotEmpty()) {
+            tenantRoleRepository.findAllById(profile.tenantRoleIds).toMutableSet()
+        } else {
+            mutableSetOf()
+        }
+
         val userProfile = UserProfile(
             user = user,
-            tenantRoles = profile.tenantRoles,
+            tenantRoles = tenantRoles,
             walletBalance = profile.walletBalance,
             isActive = profile.isActive
         )
@@ -78,21 +101,34 @@ class DefaultUserProfileService(
     /**
      * 查詢用戶檔案，由於使用外鍵約束，不再需要應用層驗證
      */
+    @Require(Permission.USERS_READ)
     @Transactional(readOnly = true)
     override fun getUserProfile(userId: UUID): UserProfile {
+        return getUserProfileInternal(userId)
+    }
+
+    /**
+     * 內部方法：查詢用戶檔案（不進行權限檢查，用於權限驗證流程）
+     */
+    @Transactional(readOnly = true)
+    override fun getUserProfileInternal(userId: UUID): UserProfile {
         return userProfileRepository.findByUserId(userId).getOrNull() ?: throw UserProfileNotCreated
     }
 
     /**
      * 更新用戶檔案信息
      */
+    @Require(Permission.USERS_UPDATE)
     @Transactional
     override fun updateUserProfile(userId: UUID, update: UserProfileUpdate): UserProfile {
         val userProfile = userProfileRepository.findByUserId(userId).getOrNull() ?: throw UserProfileNotCreated
 
-        update.tenantRoles?.let { newRoles ->
+        update.tenantRoleIds?.let { newRoleIds ->
             userProfile.tenantRoles.clear()
-            userProfile.tenantRoles.addAll(newRoles)
+            if (newRoleIds.isNotEmpty()) {
+                val newRoles = tenantRoleRepository.findAllById(newRoleIds)
+                userProfile.tenantRoles.addAll(newRoles)
+            }
         }
         update.walletBalance?.let { userProfile.walletBalance = it }
         update.isActive?.let { userProfile.isActive = it }
@@ -103,6 +139,7 @@ class DefaultUserProfileService(
     /**
      * 刪除用戶檔案（保留全域用戶）
      */
+    @Require(Permission.USERS_DELETE)
     @Transactional
     override fun deleteUserProfile(userId: UUID) {
         val userProfile = userProfileRepository.findByUserId(userId).getOrNull() ?: return
@@ -112,26 +149,33 @@ class DefaultUserProfileService(
     /**
      * 添加租戶角色
      */
+    @Require(permission = Permission.ROLES_ASSIGN)
     @Transactional
     override fun addTenantRole(userId: UUID, roleOperation: TenantRoleOperation): UserProfile {
         val userProfile = userProfileRepository.findByUserId(userId).getOrNull() ?: throw UserProfileNotCreated
-        userProfile.addTenantRole(roleOperation.role)
+        val tenantRole = tenantRoleRepository.findById(roleOperation.roleId).getOrNull() ?: throw TenantRoleNotFound
+        userProfile.addTenantRole(tenantRole)
+        applicationEventPublisher.publishEvent(PermissionReloadEvent(userId))
         return userProfileRepository.save(userProfile)
     }
 
     /**
      * 移除租戶角色
      */
+    @Require(permission = Permission.ROLES_UNASSIGN)
     @Transactional
     override fun removeTenantRole(userId: UUID, roleOperation: TenantRoleOperation): UserProfile {
         val userProfile = userProfileRepository.findByUserId(userId).getOrNull() ?: throw UserProfileNotCreated
-        userProfile.removeTenantRole(roleOperation.role)
+        val tenantRole = tenantRoleRepository.findById(roleOperation.roleId).getOrNull() ?: throw TenantRoleNotFound
+        userProfile.removeTenantRole(tenantRole)
+        applicationEventPublisher.publishEvent(PermissionReloadEvent(userId))
         return userProfileRepository.save(userProfile)
     }
 
     /**
      * 更新錢包餘額
      */
+    @Require(Permission.WALLETS_ADJUST)
     @Transactional
     override fun updateWalletBalance(userId: UUID, balanceUpdate: WalletBalanceUpdate): UserProfile {
         val userProfile = userProfileRepository.findByUserId(userId).getOrNull() ?: throw UserProfileNotCreated

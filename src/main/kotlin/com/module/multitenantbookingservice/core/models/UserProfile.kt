@@ -23,7 +23,7 @@ class UserProfile(
      * Reference to global user identity in public schema.
      * 使用 cross schema foreign key 確保參照完整性
      */
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @OneToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(
         name = "user_id",
         nullable = false,
@@ -35,13 +35,13 @@ class UserProfile(
      * 租戶特定的角色 (與 public.User 的 systemRoles 不同)
      * 例如: VENUE_ADMIN, BOOKING_MANAGER, MEMBER
      */
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
         name = "user_profile_tenant_roles",
-        joinColumns = [JoinColumn(name = "user_profile_id")]
+        joinColumns = [JoinColumn(name = "user_profile_id")],
+        inverseJoinColumns = [JoinColumn(name = "role_id")]
     )
-    @Column(name = "role")
-    var tenantRoles: MutableSet<String> = mutableSetOf(),
+    var tenantRoles: MutableSet<TenantRole> = mutableSetOf(),
 
     @Column(name = "joined_at", nullable = false)
     val joinedAt: LocalDateTime = LocalDateTime.now(),
@@ -55,15 +55,19 @@ class UserProfile(
 
 ): HasResourceOwner {
 
-    fun addTenantRole(role: String) {
+    fun addTenantRole(role: TenantRole) {
         tenantRoles.add(role)
     }
 
-    fun removeTenantRole(role: String) {
+    fun removeTenantRole(role: TenantRole) {
         tenantRoles.remove(role)
     }
 
-    fun hasTenantRole(role: String): Boolean {
+    fun hasTenantRole(roleName: String): Boolean {
+        return tenantRoles.any { it.name == roleName }
+    }
+
+    fun hasTenantRole(role: TenantRole): Boolean {
         return tenantRoles.contains(role)
     }
 
