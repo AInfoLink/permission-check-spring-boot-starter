@@ -1,6 +1,6 @@
 package com.module.multitenantbookingservice.core.service
 
-import com.module.multitenantbookingservice.core.config.ItemCategoryConfig
+import com.module.multitenantbookingservice.core.config.OrderItemCategoryConfigLoader
 import com.module.multitenantbookingservice.core.models.CategoryType
 import com.module.multitenantbookingservice.core.models.OrderItemCategory
 import com.module.multitenantbookingservice.core.models.OperationType
@@ -15,9 +15,9 @@ import java.time.Instant
  * 職責單一：系統啟動時初始化預設分類
  */
 @Service
-class ItemCategoryInitializationService(
+class OrderItemCategoryInitializationService(
     private val categoryRepository: OrderItemCategoryRepository,
-    private val categoryConfig: ItemCategoryConfig
+    private val configLoader: OrderItemCategoryConfigLoader
 ) {
 
     /**
@@ -36,7 +36,7 @@ class ItemCategoryInitializationService(
      */
     @Transactional
     fun initializeSystemManagedCategories() {
-        categoryConfig.systemManagedCategories.forEach { config ->
+        configLoader.systemManagedCategories.forEach { config ->
             if (!categoryRepository.existsByCode(config.code)) {
                 val category = OrderItemCategory(
                     code = config.code,

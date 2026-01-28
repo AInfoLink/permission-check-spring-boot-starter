@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component
 import org.yaml.snakeyaml.Yaml
 
 @Component
-class ItemCategoryConfig(
+class OrderItemCategoryConfigLoader(
     @Value("\${item.category.config.path}")
     val configPath: String
 ) {
@@ -26,7 +26,7 @@ class ItemCategoryConfig(
     )
 
     lateinit var systemManagedCategories: List<SystemCategoryConfigYaml>
-    private val logger = LoggerFactory.getLogger(ItemCategoryConfig::class.java)
+    private val logger = LoggerFactory.getLogger(OrderItemCategoryConfigLoader::class.java)
 
     @PostConstruct
     fun loadConfig() {
