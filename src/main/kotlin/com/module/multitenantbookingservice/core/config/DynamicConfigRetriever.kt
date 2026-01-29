@@ -1,5 +1,6 @@
 package com.module.multitenantbookingservice.core.config
 
+import com.module.multitenantbookingservice.core.models.DynamicConfig
 import com.module.multitenantbookingservice.core.repository.DynamicConfigRepository
 import com.module.multitenantbookingservice.system.tenancy.context.TenantContextHolder
 import org.springframework.stereotype.Service
@@ -15,9 +16,9 @@ interface DynamicConfigRetriever<T> {
 }
 
 /**
- * Generic configuration retriever that eliminates the need for specific retriever classes.
+ * Generic configuration retriever and saver that eliminates the need for specific retriever classes.
  *
- * This service provides a unified way to retrieve any type of configuration from the
+ * This service provides a unified way to retrieve and save any type of configuration from the
  * DynamicConfig repository, reducing code duplication and simplifying configuration management.
  *
  * ## Usage Examples
@@ -26,6 +27,7 @@ interface DynamicConfigRetriever<T> {
  * @Service
  * class MyService(private val configRetriever: GenericConfigRetriever) {
  *
+ *     // Retrieve configuration with default fallback
  *     fun getBookingConfig(tenantId: UUID): BookingTimeSlotConfig {
  *         return configRetriever.getConfig(
  *             tenantId = tenantId,
@@ -33,11 +35,32 @@ interface DynamicConfigRetriever<T> {
  *             configClass = BookingTimeSlotConfig::class.java
  *         ) { BookingTimeSlotConfig().withDefaultConfig(TimeSlotInterval.HOURLY) }
  *     }
+ *
+ *     // Save configuration
+ *     fun updateBookingConfig(tenantId: UUID, config: BookingTimeSlotConfig) {
+ *         configRetriever.saveConfig(
+ *             tenantId = tenantId,
+ *             configKey = BookingTimeSlotConfig.CONFIG_KEY,
+ *             config = config
+ *         )
+ *     }
+ *
+ *     // Tenant-aware operations (using TenantContextHolder)
+ *     fun getCurrentTenantConfig(): BookingTimeSlotConfig {
+ *         return configRetriever.getConfig(
+ *             configKey = BookingTimeSlotConfig.CONFIG_KEY,
+ *             configClass = BookingTimeSlotConfig::class.java
+ *         ) { BookingTimeSlotConfig().withDefaultConfig(TimeSlotInterval.HOURLY) }
+ *     }
+ *
+ *     fun saveCurrentTenantConfig(config: BookingTimeSlotConfig) {
+ *         configRetriever.saveConfig(BookingTimeSlotConfig.CONFIG_KEY, config)
+ *     }
  * }
  * ```
  *
  * @param dynamicConfigRepository Repository for accessing dynamic configurations
- * @param mapper Service for converting JSON config body to typed objects
+ * @param mapper Service for converting between JSON config body and typed objects
  */
 @Service
 class GenericConfigRetriever(
@@ -94,5 +117,59 @@ class GenericConfigRetriever(
         } else {
             throw IllegalArgumentException("Configuration not found for key: $configKey and tenantId: $tenantId")
         }
+    }
+
+    /**
+     * Saves a configuration for the specified tenant.
+     * If a configuration with the same key and tenant already exists, it will be updated.
+     *
+     * @param tenantId The tenant identifier
+     * @param configKey The configuration key to save
+     * @param config The configuration object to save
+     * @throws IllegalArgumentException if configuration conversion fails
+     */
+    fun <T> saveConfig(
+        tenantId: UUID,
+        configKey: String,
+        config: T
+    ) {
+        val existingConfig = dynamicConfigRepository.findByTenantIdAndKey(tenantId, configKey).getOrNull()
+        val configToSave = if (existingConfig != null) {
+            // Update existing config with new body
+            DynamicConfig(
+                id = existingConfig.id,
+                key = configKey,
+                tenantId = tenantId,
+                body = mapper.objectToMap(config)
+            )
+        } else {
+            // Create new config
+            DynamicConfig(
+                key = configKey,
+                tenantId = tenantId,
+                body = mapper.objectToMap(config)
+            )
+        }
+
+        dynamicConfigRepository.save(configToSave)
+    }
+
+    /**
+     * Tenant-aware version using TenantContextHolder.
+     * Automatically retrieves tenant ID from current context and saves the configuration.
+     *
+     * @param configKey The configuration key to save
+     * @param config The configuration object to save
+     * @throws IllegalStateException if tenant ID not found in context
+     * @throws IllegalArgumentException if configuration conversion fails
+     */
+    fun <T> saveConfig(
+        configKey: String,
+        config: T
+    ) {
+        val tenantId = TenantContextHolder.getTenantId()
+            ?: throw IllegalStateException("Tenant ID not found in context")
+
+        saveConfig(tenantId, configKey, config)
     }
 }

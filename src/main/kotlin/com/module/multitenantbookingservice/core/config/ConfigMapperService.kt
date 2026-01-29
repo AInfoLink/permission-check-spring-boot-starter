@@ -94,6 +94,22 @@ class ConfigMapperService {
     fun <T> convert(config: DynamicConfig, clazz: Class<T>): T {
         return mapToType(config.body, clazz)
     }
+
+    /**
+     * Converts an object to a Map<String, Any> for DynamicConfig body storage
+     * @param obj The object to convert
+     * @return The converted Map representation
+     * @throws IllegalArgumentException if conversion fails
+     */
+    fun <T> objectToMap(obj: T): Map<String, Any> {
+        return try {
+            // Convert object to JSON string, then parse to Map
+            val jsonString = mapper.writeValueAsString(obj)
+            mapper.readValue(jsonString, Map::class.java) as Map<String, Any>
+        } catch (e: Exception) {
+            throw IllegalArgumentException("Failed to convert object ${obj!!::class.java} to map", e)
+        }
+    }
 }
 
 // =============================================================================
@@ -155,4 +171,63 @@ inline fun <reified T> mapToType(body: Map<String, Any>, mapperService: ConfigMa
  */
 inline fun <reified T> convertConfig(config: DynamicConfig, mapperService: ConfigMapperService): T {
     return mapperService.convert(config, T::class.java)
+}
+
+// =============================================================================
+// Extension Functions for Config Saving with Generic Support
+// =============================================================================
+
+/**
+ * Extension function to save configuration with reified generics support.
+ * This provides a type-safe way to save configurations without explicitly passing Class objects.
+ *
+ * Usage:
+ * ```kotlin
+ * // Instead of:
+ * configRetriever.saveConfig(tenantId, "my.config.key", myConfig)
+ *
+ * // You can use:
+ * saveConfig<MyConfig>(tenantId, "my.config.key", myConfig, configRetriever)
+ * ```
+ *
+ * @param T The configuration type (automatically inferred)
+ * @param tenantId The tenant identifier
+ * @param configKey The configuration key
+ * @param config The configuration object to save
+ * @param configRetriever The GenericConfigRetriever instance
+ */
+inline fun <reified T> saveConfig(
+    tenantId: java.util.UUID,
+    configKey: String,
+    config: T,
+    configRetriever: GenericConfigRetriever
+) {
+    configRetriever.saveConfig(tenantId, configKey, config)
+}
+
+/**
+ * Extension function to save configuration with tenant context using reified generics.
+ * This provides a type-safe way to save configurations using TenantContextHolder.
+ *
+ * Usage:
+ * ```kotlin
+ * // Instead of:
+ * configRetriever.saveConfig("my.config.key", myConfig)
+ *
+ * // You can use:
+ * saveConfig<MyConfig>("my.config.key", myConfig, configRetriever)
+ * ```
+ *
+ * @param T The configuration type (automatically inferred)
+ * @param configKey The configuration key
+ * @param config The configuration object to save
+ * @param configRetriever The GenericConfigRetriever instance
+ * @throws IllegalStateException if tenant ID not found in context
+ */
+inline fun <reified T> saveConfig(
+    configKey: String,
+    config: T,
+    configRetriever: GenericConfigRetriever
+) {
+    configRetriever.saveConfig(configKey, config)
 }
