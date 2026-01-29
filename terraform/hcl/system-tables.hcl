@@ -54,6 +54,43 @@ table "system_roles" {
   }
 }
 
+
+table "dynamic_configs" {
+  schema = schema.public
+
+  column "id" {
+    null = false
+    type = uuid
+  }
+  column "key" {
+    null = false
+    type = character_varying(255)
+  }
+  column "body" {
+    null = false
+    type = jsonb
+  }
+
+  column "tenant_id" {
+    null = false
+    type = uuid
+  }
+
+  primary_key {
+    columns = [column.id]
+  }
+  index "idx_dynamic_configs_key" {
+    columns = [column.key]
+  }
+  unique "idx_dynamic_configs_key_unique" {
+    columns = [column.key]
+  }
+
+  unique "idx_dynamic_configs_tenant_key_unique" {
+    columns = [column.tenant_id, column.key]
+  }
+}
+
 schema "public" {
   comment = "standard public schema"
 }

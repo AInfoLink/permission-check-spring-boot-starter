@@ -1,5 +1,6 @@
 package com.module.multitenantbookingservice.core.models
 
+import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
 import jakarta.persistence.Table
@@ -51,6 +52,9 @@ class DynamicConfig(
     @Id
     val id: UUID = UUID.randomUUID(),
     val key: String,
+
+    @Column(name = "tenant_id")
+    var tenantId: UUID?,
 
     @JdbcTypeCode(SqlTypes.JSON)
     val body: Map<String, Any>
