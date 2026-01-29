@@ -13,6 +13,12 @@ interface DynamicConfigRetriever<T> {
         val tenantId = TenantContextHolder.getTenantId() ?: throw IllegalStateException("Tenant ID not found in context")
         return getConfig(tenantId)
     }
+
+    fun saveConfig(tenantId: UUID, config: T)
+    fun saveConfig(config: T) {
+        val tenantId = TenantContextHolder.getTenantId() ?: throw IllegalStateException("Tenant ID not found in context")
+        saveConfig(tenantId, config)
+    }
 }
 
 /**

@@ -21,7 +21,8 @@ class BookingTimeSlot(
     val startTime: LocalTime,
     var endTime: LocalTime,
     val priceMultiplier: Double, // 1.0 = base price, 1.5 = 50% markup, 0.8 = 20% discount
-    val additionalFee: Double = 0.0 // Additional fee
+    val additionalFee: Double = 0.0,  // Additional fee
+    var basePrice: Int
 ) {
     init {
         // This assumes same day time slots; overnight slots will be thrown as invalid
@@ -33,6 +34,8 @@ class BookingTimeSlot(
     fun asTimeRange(): TimeRange {
         return TimeRange(startTime, endTime)
     }
+
+    val hourCode: Int = startTime.hour
 }
 
 class BookingTimeSlotConfig(
@@ -57,7 +60,7 @@ class BookingTimeSlotConfig(
         timeSlots.add(timeSlot)
     }
 
-    fun withDefaultConfig(interval: TimeSlotInterval): BookingTimeSlotConfig {
+    fun withDefault(interval: TimeSlotInterval): BookingTimeSlotConfig {
         var currentTime = LocalTime.MIN
         while (currentTime < LocalTime.MAX) {
             val endTime = if (currentTime.hour == 23) LocalTime.MAX else currentTime.plusSeconds(interval.seconds.toLong())
@@ -65,7 +68,8 @@ class BookingTimeSlotConfig(
                 slotType = TimeSlotType.REGULAR,
                 startTime = currentTime,
                 endTime = endTime,
-                priceMultiplier = 1.0
+                priceMultiplier = 1.0,
+                basePrice = 0
             )
             addTimeSlot(slot)
             currentTime = endTime

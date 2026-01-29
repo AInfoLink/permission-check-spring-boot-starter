@@ -21,20 +21,19 @@ class BookingTimeSlotConfigRetriever(
             configKey = BookingTimeSlotConfig.CONFIG_KEY,
             configClass = BookingTimeSlotConfig::class.java
         ) {
-            BookingTimeSlotConfig().withDefaultConfig(TimeSlotInterval.HOURLY)
+            BookingTimeSlotConfig().withDefault(TimeSlotInterval.HOURLY)
         }
     }
 
     /**
-     * Get booking time slot configuration using current tenant context
-     * This is the preferred method when tenant context is available
+     * Save booking time slot configuration for specific tenant
      */
-    override fun getConfig(): BookingTimeSlotConfig {
-        return genericConfigRetriever.getConfig(
+    override fun saveConfig(tenantId: UUID, config: BookingTimeSlotConfig) {
+        genericConfigRetriever.saveConfig(
+            tenantId = tenantId,
             configKey = BookingTimeSlotConfig.CONFIG_KEY,
-            configClass = BookingTimeSlotConfig::class.java
-        ) {
-            BookingTimeSlotConfig().withDefaultConfig(TimeSlotInterval.HOURLY)
-        }
+            config = config
+        )
     }
+
 }

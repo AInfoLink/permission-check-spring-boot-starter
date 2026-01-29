@@ -5,9 +5,9 @@ on:
     branches:
       - main
     paths:
-      - 'terraform/**'
+      - '../../src/main/resources/terraform/**'
       - 'src/main/resources/hcl/**'
-      - 'terraform/hcl/**'
+      - '../../src/main/resources/terraform/hcl/**'
       - '.env'
       - 'Makefile'
   workflow_dispatch:
