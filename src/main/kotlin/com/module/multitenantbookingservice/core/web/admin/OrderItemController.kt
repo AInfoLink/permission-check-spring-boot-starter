@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.*
 import java.util.*
 
 @RestController
-@RequestMapping("/api/order-items")
+@RequestMapping("/api/admin/order-items")
 class OrderItemController(
     private val orderItemService: OrderItemService
 ) {

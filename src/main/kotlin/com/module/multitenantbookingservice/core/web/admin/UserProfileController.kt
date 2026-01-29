@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*
 import java.util.*
 
 @RestController
-@RequestMapping("/api/user-profiles")
+@RequestMapping("/api/admin/user-profiles")
 class UserProfileController(
     private val userProfileService: UserProfileService
 ) {

@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*
 import java.util.*
 
 @RestController
-@RequestMapping("/api/venue-groups")
+@RequestMapping("/api/admin/venue-groups")
 class VenueGroupController(
     private val venueService: VenueService
 ) {
