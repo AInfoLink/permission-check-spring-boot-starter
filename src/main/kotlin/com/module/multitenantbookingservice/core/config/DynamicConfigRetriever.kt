@@ -1,12 +1,17 @@
 package com.module.multitenantbookingservice.core.config
 
 import com.module.multitenantbookingservice.core.repository.DynamicConfigRepository
+import com.module.multitenantbookingservice.system.tenancy.context.TenantContextHolder
 import org.springframework.stereotype.Service
 import java.util.UUID
 import kotlin.jvm.optionals.getOrNull
 
 interface DynamicConfigRetriever<T> {
     fun getConfig(tenantId: UUID): T
+    fun getConfig(): T {
+        val tenantId = TenantContextHolder.getTenantId() ?: throw IllegalStateException("Tenant ID not found in context")
+        return getConfig(tenantId)
+    }
 }
 
 /**
@@ -59,5 +64,35 @@ class GenericConfigRetriever(
         val dynamicConfig = dynamicConfigRepository.findByTenantIdAndKey(tenantId, configKey).getOrNull()
             ?: return defaultProvider()
         return mapper.convert(dynamicConfig, configClass)
+    }
+
+    /**
+     * Tenant-aware version using TenantContextHolder.
+     * Automatically retrieves tenant ID from current context.
+     *
+     * @param configKey The configuration key to look up
+     * @param configClass The target configuration class
+     * @param defaultProvider Optional lambda function to provide default configuration when none exists
+     * @return The configuration instance, either from database or default
+     * @throws IllegalStateException if tenant ID not found in context
+     * @throws IllegalArgumentException if configuration conversion fails or no config found and no default provided
+     */
+    fun <T> getConfig(
+        configKey: String,
+        configClass: Class<T>,
+        defaultProvider: (() -> T)? = null
+    ): T {
+        val tenantId = TenantContextHolder.getTenantId()
+            ?: throw IllegalStateException("Tenant ID not found in context")
+
+        val dynamicConfig = dynamicConfigRepository.findByTenantIdAndKey(tenantId, configKey).getOrNull()
+
+        return if (dynamicConfig != null) {
+            mapper.convert(dynamicConfig, configClass)
+        } else if (defaultProvider != null) {
+            defaultProvider()
+        } else {
+            throw IllegalArgumentException("Configuration not found for key: $configKey and tenantId: $tenantId")
+        }
     }
 }

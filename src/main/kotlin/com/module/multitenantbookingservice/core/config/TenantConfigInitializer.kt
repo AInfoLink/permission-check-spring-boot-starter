@@ -1,8 +1,7 @@
 package com.module.multitenantbookingservice.core.config
 
 import com.module.multitenantbookingservice.core.config.tenant.BookingTimeSlotConfigRetriever
-import com.module.multitenantbookingservice.core.strategy.BookingTimeSlotConfig
-import com.module.multitenantbookingservice.core.strategy.TimeSlotInterval
+import jakarta.annotation.PostConstruct
 import org.springframework.stereotype.Service
 import java.util.*
 
@@ -11,12 +10,14 @@ import java.util.*
 class TenantConfigInitializer(
     val bookingTimeSlotConfigRetriever: BookingTimeSlotConfigRetriever
 ) {
+    @PostConstruct
+    fun postConstruct() {
+        println("TenantConfigInitializer postConstruct called.")
+    }
 
     fun initialize(tenantId: UUID) {
         // Initialization logic for tenant configurations
         println("TenantConfigInitializer has been initialized.")
-        bookingTimeSlotConfigRetriever.getConfig(tenantId)
-        val bookingTimeSlotConfig = BookingTimeSlotConfig().withDefaultConfig(TimeSlotInterval.HOURLY)
 
     }
 }
