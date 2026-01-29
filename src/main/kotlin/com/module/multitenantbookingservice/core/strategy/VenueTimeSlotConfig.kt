@@ -1,6 +1,5 @@
 package com.module.multitenantbookingservice.core.strategy
 
-import com.module.multitenantbookingservice.core.models.Venue
 import com.module.multitenantbookingservice.security.TimeSlotOverlap
 import java.time.LocalTime
 import java.util.*
@@ -11,12 +10,16 @@ enum class TimeSlotType(val typeName: String) {
     PEAK("PEAK")                 // Peak hours
 }
 
+enum class TimeSlotInterval(val seconds: Int) {
+    HOURLY(3600),
+    HALF_HOURLY(1800),
+}
+
 class BookingTimeSlot(
     val id: UUID = UUID.randomUUID(),
-    val venue: Venue,
-    val slotType: TimeSlotType,
+    var slotType: TimeSlotType,
     val startTime: LocalTime,
-    val endTime: LocalTime,
+    var endTime: LocalTime,
     val priceMultiplier: Double, // 1.0 = base price, 1.5 = 50% markup, 0.8 = 20% discount
     val additionalFee: Double = 0.0 // Additional fee
 ) {
@@ -34,8 +37,12 @@ class BookingTimeSlot(
 
 class BookingTimeSlotConfig(
     val id: UUID = UUID.randomUUID(),
+    val isConfigured : Boolean = false,
     private val timeSlots: MutableSet<BookingTimeSlot> = mutableSetOf()
 ) {
+    companion object {
+        val CONFIG_KEY = "booking.time.slot.config"
+    }
     fun addTimeSlot(timeSlot: BookingTimeSlot) {
         val timeSlotRange = timeSlot.asTimeRange()
         timeSlots.forEach { slot ->
@@ -48,5 +55,21 @@ class BookingTimeSlotConfig(
             }
         }
         timeSlots.add(timeSlot)
+    }
+
+    fun withDefaultConfig(interval: TimeSlotInterval): BookingTimeSlotConfig {
+        var currentTime = LocalTime.MIN
+        while (currentTime < LocalTime.MAX) {
+            val endTime = if (currentTime.hour == 23) LocalTime.MAX else currentTime.plusSeconds(interval.seconds.toLong())
+            val slot = BookingTimeSlot(
+                slotType = TimeSlotType.REGULAR,
+                startTime = currentTime,
+                endTime = endTime,
+                priceMultiplier = 1.0
+            )
+            addTimeSlot(slot)
+            currentTime = endTime
+        }
+        return this
     }
 }
