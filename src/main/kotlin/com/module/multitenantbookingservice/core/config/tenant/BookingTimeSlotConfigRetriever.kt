@@ -5,8 +5,6 @@ import com.module.multitenantbookingservice.core.config.GenericConfigRetriever
 import com.module.multitenantbookingservice.core.strategy.BookingTimeSlotConfig
 import com.module.multitenantbookingservice.core.strategy.TimeSlotInterval
 import org.springframework.stereotype.Service
-import java.util.UUID
-
 @Service
 class BookingTimeSlotConfigRetriever(
     private val genericConfigRetriever: GenericConfigRetriever
@@ -15,7 +13,7 @@ class BookingTimeSlotConfigRetriever(
     /**
      * Get booking time slot configuration for specific tenant
      */
-    override fun getConfig(tenantId: UUID): BookingTimeSlotConfig {
+    override fun getConfig(tenantId: String): BookingTimeSlotConfig {
         return genericConfigRetriever.getConfig(
             tenantId = tenantId,
             configKey = BookingTimeSlotConfig.CONFIG_KEY,
@@ -28,7 +26,7 @@ class BookingTimeSlotConfigRetriever(
     /**
      * Save booking time slot configuration for specific tenant
      */
-    override fun saveConfig(tenantId: UUID, config: BookingTimeSlotConfig) {
+    override fun saveConfig(tenantId: String, config: BookingTimeSlotConfig) {
         genericConfigRetriever.saveConfig(
             tenantId = tenantId,
             configKey = BookingTimeSlotConfig.CONFIG_KEY,

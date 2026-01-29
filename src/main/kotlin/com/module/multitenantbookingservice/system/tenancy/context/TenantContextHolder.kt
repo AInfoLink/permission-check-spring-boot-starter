@@ -1,7 +1,6 @@
 package com.module.multitenantbookingservice.system.tenancy.context
 
 import org.slf4j.LoggerFactory
-import java.util.UUID
 
 /**
  * Tenant Context Holder - Singleton Object
@@ -11,27 +10,27 @@ import java.util.UUID
  * 2. Support tenant context passing between threads
  * 3. Provide tenant context cleanup
  *
- * Updated to use UUID for tenant IDs for type safety and consistency.
+ * Uses String for tenant IDs for simplicity and consistency with external APIs.
  */
 object TenantContextHolder {
 
     private const val COMMON_SCHEMA = "PUBLIC"
 
     private val logger = LoggerFactory.getLogger(TenantContextHolder::class.java)
-    private val contextHolder: ThreadLocal<UUID> = InheritableThreadLocal()
+    private val contextHolder: ThreadLocal<String> = InheritableThreadLocal()
 
     /**
-     * Set tenant ID as UUID
+     * Set tenant ID as String
      */
-    fun setTenantId(tenantId: UUID?) {
+    fun setTenantId(tenantId: String?) {
         logger.debug("Setting tenant ID in context: $tenantId")
         contextHolder.set(tenantId)
     }
 
     /**
-     * Get tenant ID as UUID
+     * Get tenant ID as String
      */
-    fun getTenantId(): UUID? {
+    fun getTenantId(): String? {
         return contextHolder.get()
     }
 

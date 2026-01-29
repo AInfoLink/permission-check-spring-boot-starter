@@ -197,7 +197,7 @@ inline fun <reified T> convertConfig(config: DynamicConfig, mapperService: Confi
  * @param configRetriever The GenericConfigRetriever instance
  */
 inline fun <reified T> saveConfig(
-    tenantId: java.util.UUID,
+    tenantId: String,
     configKey: String,
     config: T,
     configRetriever: GenericConfigRetriever

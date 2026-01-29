@@ -5,9 +5,7 @@ import org.springframework.data.repository.CrudRepository
 import org.springframework.stereotype.Repository
 import java.util.Optional
 import java.util.UUID
-
-
 @Repository
 interface DynamicConfigRepository: CrudRepository<DynamicConfig, UUID> {
-    fun findByTenantIdAndKey(tenantId: UUID, key: String): Optional<DynamicConfig>
+    fun findByTenantIdAndKey(tenantId: String, key: String): Optional<DynamicConfig>
 }

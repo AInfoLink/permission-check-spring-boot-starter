@@ -4,17 +4,16 @@ import com.module.multitenantbookingservice.core.models.DynamicConfig
 import com.module.multitenantbookingservice.core.repository.DynamicConfigRepository
 import com.module.multitenantbookingservice.system.tenancy.context.TenantContextHolder
 import org.springframework.stereotype.Service
-import java.util.UUID
 import kotlin.jvm.optionals.getOrNull
 
 interface DynamicConfigRetriever<T> {
-    fun getConfig(tenantId: UUID): T
+    fun getConfig(tenantId: String): T
     fun getConfig(): T {
         val tenantId = TenantContextHolder.getTenantId() ?: throw IllegalStateException("Tenant ID not found in context")
         return getConfig(tenantId)
     }
 
-    fun saveConfig(tenantId: UUID, config: T)
+    fun saveConfig(tenantId: String, config: T)
     fun saveConfig(config: T) {
         val tenantId = TenantContextHolder.getTenantId() ?: throw IllegalStateException("Tenant ID not found in context")
         saveConfig(tenantId, config)
@@ -34,7 +33,7 @@ interface DynamicConfigRetriever<T> {
  * class MyService(private val configRetriever: GenericConfigRetriever) {
  *
  *     // Retrieve configuration with default fallback
- *     fun getBookingConfig(tenantId: UUID): BookingTimeSlotConfig {
+ *     fun getBookingConfig(tenantId: String): BookingTimeSlotConfig {
  *         return configRetriever.getConfig(
  *             tenantId = tenantId,
  *             configKey = BookingTimeSlotConfig.CONFIG_KEY,
@@ -43,7 +42,7 @@ interface DynamicConfigRetriever<T> {
  *     }
  *
  *     // Save configuration
- *     fun updateBookingConfig(tenantId: UUID, config: BookingTimeSlotConfig) {
+ *     fun updateBookingConfig(tenantId: String, config: BookingTimeSlotConfig) {
  *         configRetriever.saveConfig(
  *             tenantId = tenantId,
  *             configKey = BookingTimeSlotConfig.CONFIG_KEY,
@@ -85,7 +84,7 @@ class GenericConfigRetriever(
      * @throws IllegalArgumentException if configuration conversion fails
      */
     fun <T> getConfig(
-        tenantId: UUID,
+        tenantId: String,
         configKey: String,
         configClass: Class<T>,
         defaultProvider: () -> T
@@ -135,7 +134,7 @@ class GenericConfigRetriever(
      * @throws IllegalArgumentException if configuration conversion fails
      */
     fun <T> saveConfig(
-        tenantId: UUID,
+        tenantId: String,
         configKey: String,
         config: T
     ) {

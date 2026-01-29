@@ -54,7 +54,7 @@ class DynamicConfig(
     val key: String,
 
     @Column(name = "tenant_id")
-    var tenantId: UUID?,
+    var tenantId: String?,
 
     @JdbcTypeCode(SqlTypes.JSON)
     val body: Map<String, Any>

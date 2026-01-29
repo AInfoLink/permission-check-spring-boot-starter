@@ -73,7 +73,7 @@ table "dynamic_configs" {
 
   column "tenant_id" {
     null = false
-    type = uuid
+    type = character_varying(36)
   }
 
   primary_key {
