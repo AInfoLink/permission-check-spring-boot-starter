@@ -1,5 +1,6 @@
 package com.module.multitenantbookingservice.core.strategy
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.module.multitenantbookingservice.security.TimeSlotOverlap
 import java.time.LocalTime
 import java.util.*
@@ -16,7 +17,6 @@ enum class TimeSlotInterval(val seconds: Int) {
 }
 
 class BookingTimeSlot(
-    val id: UUID = UUID.randomUUID(),
     var slotType: TimeSlotType,
     val startTime: LocalTime,
     var endTime: LocalTime,
@@ -35,13 +35,13 @@ class BookingTimeSlot(
         return TimeRange(startTime, endTime)
     }
 
-    val hourCode: Int = startTime.hour
+    @JsonIgnore
+    fun getHourCode(): Int = startTime.hour
 }
 
 class BookingTimeSlotConfig(
-    val id: UUID = UUID.randomUUID(),
     val isConfigured : Boolean = false,
-    private val timeSlots: MutableSet<BookingTimeSlot> = mutableSetOf()
+    val timeSlots: MutableSet<BookingTimeSlot> = mutableSetOf()
 ) {
     companion object {
         val CONFIG_KEY = "booking.time.slot.config"

@@ -1,5 +1,7 @@
 package com.module.multitenantbookingservice.core.config
 
+import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.module.multitenantbookingservice.core.models.DynamicConfig
 import org.springframework.stereotype.Service
@@ -66,7 +68,12 @@ import org.springframework.stereotype.Service
  */
 @Service
 class ConfigMapperService {
-    private val mapper = jacksonObjectMapper()
+    private val mapper = jacksonObjectMapper().apply {
+        // Register Java 8 Time Module for LocalTime, LocalDate, etc.
+        registerModule(JavaTimeModule())
+        // Disable writing dates/times as timestamps (use ISO format instead)
+        disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+    }
 
     /**
      * Converts a Map to the specified type using Class parameter
