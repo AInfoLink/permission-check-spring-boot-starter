@@ -1,4 +1,4 @@
-package com.module.multitenantbookingservice.core.config
+package com.module.multitenantbookingservice.core.tenant.service
 
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule

@@ -1,6 +1,6 @@
 package com.module.multitenantbookingservice.core.web.admin
 
-import com.module.multitenantbookingservice.core.config.TenantInitializer
+import com.module.multitenantbookingservice.core.tenant.service.TenantInitializer
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController

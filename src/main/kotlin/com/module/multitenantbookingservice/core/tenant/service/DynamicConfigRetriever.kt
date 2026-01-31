@@ -1,4 +1,4 @@
-package com.module.multitenantbookingservice.core.config
+package com.module.multitenantbookingservice.core.tenant.service
 
 import com.module.multitenantbookingservice.core.models.DynamicConfig
 import com.module.multitenantbookingservice.core.repository.DynamicConfigRepository

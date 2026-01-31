@@ -1,9 +1,7 @@
-package com.module.multitenantbookingservice.core.config.tenant
+package com.module.multitenantbookingservice.core.tenant.service
 
-import com.module.multitenantbookingservice.core.config.DynamicConfigRetriever
-import com.module.multitenantbookingservice.core.config.GenericConfigRetriever
-import com.module.multitenantbookingservice.core.strategy.BookingTimeSlotConfig
-import com.module.multitenantbookingservice.core.strategy.TimeSlotInterval
+import com.module.multitenantbookingservice.core.tenant.config.BookingTimeSlotConfig
+import com.module.multitenantbookingservice.core.tenant.config.TimeSlotInterval
 import org.springframework.stereotype.Service
 @Service
 class BookingTimeSlotConfigRetriever(

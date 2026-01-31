@@ -1,9 +1,9 @@
-package com.module.multitenantbookingservice.core.strategy
+package com.module.multitenantbookingservice.core.tenant.config
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.module.multitenantbookingservice.core.strategy.TimeRange
 import com.module.multitenantbookingservice.security.TimeSlotOverlap
 import java.time.LocalTime
-import java.util.*
 
 enum class TimeSlotType(val typeName: String) {
     UNATTENDED("UNATTENDED"),    // Off-peak hours

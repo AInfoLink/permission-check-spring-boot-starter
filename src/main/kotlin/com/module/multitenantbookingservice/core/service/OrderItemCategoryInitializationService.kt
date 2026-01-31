@@ -1,6 +1,6 @@
 package com.module.multitenantbookingservice.core.service
 
-import com.module.multitenantbookingservice.core.config.OrderItemCategoryConfigLoader
+import com.module.multitenantbookingservice.core.tenant.service.OrderItemCategoryConfigLoader
 import com.module.multitenantbookingservice.core.models.CategoryType
 import com.module.multitenantbookingservice.core.models.OrderItemCategory
 import com.module.multitenantbookingservice.core.models.OperationType
