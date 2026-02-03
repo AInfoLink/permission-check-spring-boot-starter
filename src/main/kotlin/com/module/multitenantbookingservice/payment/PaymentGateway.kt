@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component
  */
 @Component
 class PaymentGateway(
-    private val paymentServices: List<PaymentService>
+    private val paymentServices: List<PaymentService<*>>
 ) {
 
     private val logger = LoggerFactory.getLogger(PaymentGateway::class.java)
@@ -28,7 +28,7 @@ class PaymentGateway(
      * @return 對應的付款服務
      * @throws PaymentServiceNotFoundException 找不到服務時拋出
      */
-    fun getPaymentService(serviceName: String): PaymentService {
+    fun getPaymentService(serviceName: String): PaymentService<*> {
         return paymentServices.find { it.getServiceName() == serviceName }
             ?: throw PaymentServiceNotFoundException("Payment service not found: $serviceName")
     }
@@ -82,7 +82,7 @@ class PaymentGateway(
         }
     }
 
-    private fun getServiceCapabilities(service: PaymentService): Set<PaymentCapabilityType> {
+    private fun getServiceCapabilities(service: PaymentService<*>): Set<PaymentCapabilityType> {
         val capabilities = mutableSetOf<PaymentCapabilityType>()
 
         if (service is RefundCapability) capabilities.add(PaymentCapabilityType.REFUND)
