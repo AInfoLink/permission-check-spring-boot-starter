@@ -69,7 +69,7 @@ data class PaymentInitiationResult(
     /**
      * 金流系統的交易ID
      */
-    val transactionId: String?,
+    val paymentId: String?,
 
     /**
      * 商戶訂單號
