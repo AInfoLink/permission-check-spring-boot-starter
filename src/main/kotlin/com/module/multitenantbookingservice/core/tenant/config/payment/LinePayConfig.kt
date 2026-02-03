@@ -20,9 +20,6 @@ data class LinePayConfig(
         }
     }
 
-
-
-
     override fun validate(): MutableSet<Exception> {
         val errors = mutableSetOf<Exception>()
         return errors

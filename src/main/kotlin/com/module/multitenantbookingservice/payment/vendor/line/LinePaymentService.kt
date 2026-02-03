@@ -1,6 +1,7 @@
 package com.module.multitenantbookingservice.payment.vendor.line
 
 import com.module.multitenantbookingservice.core.tenant.config.payment.LinePayConfig
+import com.module.multitenantbookingservice.core.tenant.config.payment.LinePayConfigRetriever
 import com.module.multitenantbookingservice.payment.PaymentService
 import com.module.multitenantbookingservice.payment.model.*
 import org.springframework.stereotype.Service
@@ -9,12 +10,13 @@ import org.springframework.stereotype.Service
 
 @Service
 class LinePaymentService(
-    private val lineClient: LineClient
+    private val lineClient: LineClient,
+    private val linePayConfigRetriever: LinePayConfigRetriever
 ): PaymentService<LinePayConfig> {
 
 
     override fun getPaymentConfig(): LinePayConfig {
-        TODO("Not yet implemented")
+        return linePayConfigRetriever.getConfig()
     }
 
     override fun initiatePayment(request: PaymentRequest): PaymentInitiationResult {
