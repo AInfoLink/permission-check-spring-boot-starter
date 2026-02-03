@@ -1,9 +1,9 @@
 package com.module.multitenantbookingservice.core.strategy
 
-import com.module.multitenantbookingservice.security.model.User
 import com.module.multitenantbookingservice.core.models.Venue
+import com.module.multitenantbookingservice.core.tenant.config.BookingTimeSlotConfig
+import com.module.multitenantbookingservice.security.model.User
 import org.springframework.stereotype.Service
-import java.time.Duration
 
 
 enum class Strategy(val strategyName: String) {
@@ -14,12 +14,17 @@ enum class Strategy(val strategyName: String) {
     OVERRIDE("Override")
 }
 
+data class BookingTimeSlotView(
+    val hour: Int,
+    val isHalfHour: Boolean,
+)
+
 data class PricingContext(
     val user: User,
     val venue: Venue,
-    val bookingTimeRange: TimeRange,
+    val bookingTimeSlots: MutableSet<BookingTimeSlotView>,
+    val bookingTimeSlotConfig: BookingTimeSlotConfig,
 ) {
-    val bookingDuration: Duration = Duration.between(bookingTimeRange.startTime, bookingTimeRange.endTime)
 }
 
 data class PricingItemResult(
