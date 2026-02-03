@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service
 
 
 enum class Strategy(val strategyName: String) {
-    CROSS_DAY_HELPER("CrossDayHelper"),
     BASE_PRICE("BasePrice"),
     TIME_BASED("TimeBased"),
     MEMBERSHIP("Membership"),
