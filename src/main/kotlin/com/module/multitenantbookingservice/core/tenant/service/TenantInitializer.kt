@@ -1,5 +1,6 @@
 package com.module.multitenantbookingservice.core.tenant.service
 
+import com.module.multitenantbookingservice.core.tenant.config.BookingTimeSlotConfigRetriever
 import jakarta.transaction.Transactional
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service

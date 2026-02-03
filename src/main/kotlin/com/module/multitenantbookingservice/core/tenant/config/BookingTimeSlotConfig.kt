@@ -1,6 +1,7 @@
 package com.module.multitenantbookingservice.core.tenant.config
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.module.multitenantbookingservice.commons.ValidationRequired
 import com.module.multitenantbookingservice.core.strategy.TimeRange
 import com.module.multitenantbookingservice.security.TimeSlotOverlap
 import java.time.LocalTime
@@ -50,7 +51,7 @@ class BookingTimeSlot(
 class BookingTimeSlotConfig(
     val isConfigured : Boolean = false,
     val timeSlots: MutableSet<BookingTimeSlot> = mutableSetOf()
-) {
+): ValidationRequired {
     companion object {
         val CONFIG_KEY = "booking.time.slot.config"
     }
@@ -83,4 +84,9 @@ class BookingTimeSlotConfig(
     fun querySlot(hour: Int): BookingTimeSlot {
         return timeSlots.find { it.hour == hour } ?: throw IllegalArgumentException("No time slot found for hour $hour")
     }
+
+    override fun validate(): MutableSet<Exception> {
+        return mutableSetOf()
+    }
+
 }

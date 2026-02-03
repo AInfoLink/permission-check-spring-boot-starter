@@ -1,12 +1,14 @@
 package com.module.multitenantbookingservice.core.tenant.service
 
+import com.module.multitenantbookingservice.commons.ValidationRequired
 import com.module.multitenantbookingservice.core.models.DynamicConfig
 import com.module.multitenantbookingservice.core.repository.DynamicConfigRepository
 import com.module.multitenantbookingservice.system.tenancy.context.TenantContextHolder
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import kotlin.jvm.optionals.getOrNull
 
-interface DynamicConfigRetriever<T> {
+interface DynamicConfigRetriever<T: ValidationRequired> {
     fun getConfig(tenantId: String): T
     fun getConfig(): T {
         val tenantId = TenantContextHolder.getTenantId() ?: throw IllegalStateException("Tenant ID not found in context")
@@ -72,6 +74,7 @@ class GenericConfigRetriever(
     private val dynamicConfigRepository: DynamicConfigRepository,
     private val mapper: ConfigMapperService
 ) {
+    private val logger = LoggerFactory.getLogger(GenericConfigRetriever::class.java)
 
     /**
      * Retrieves a configuration of the specified type for the given tenant.
@@ -83,7 +86,7 @@ class GenericConfigRetriever(
      * @return The configuration instance, either from database or default
      * @throws IllegalArgumentException if configuration conversion fails
      */
-    fun <T> getConfig(
+    fun <T: ValidationRequired> getConfig(
         tenantId: String,
         configKey: String,
         configClass: Class<T>,
@@ -91,7 +94,13 @@ class GenericConfigRetriever(
     ): T {
         val dynamicConfig = dynamicConfigRepository.findByTenantIdAndKey(tenantId, configKey).getOrNull()
             ?: return defaultProvider()
-        return mapper.convert(dynamicConfig, configClass)
+        val validationRequired = mapper.convert(dynamicConfig, configClass)
+        val errors = validationRequired.validate()
+        if (errors.isNotEmpty()) {
+            logger.warn("Configuration validation failed for tenant '$tenantId', key '$configKey': $errors. Using default configuration.")
+            return defaultProvider()
+        }
+        return validationRequired
     }
 
     /**
@@ -105,23 +114,15 @@ class GenericConfigRetriever(
      * @throws IllegalStateException if tenant ID not found in context
      * @throws IllegalArgumentException if configuration conversion fails or no config found and no default provided
      */
-    fun <T> getConfig(
+    fun <T: ValidationRequired> getConfig(
         configKey: String,
         configClass: Class<T>,
-        defaultProvider: (() -> T)? = null
+        defaultProvider: (() -> T)
     ): T {
         val tenantId = TenantContextHolder.getTenantId()
             ?: throw IllegalStateException("Tenant ID not found in context")
 
-        val dynamicConfig = dynamicConfigRepository.findByTenantIdAndKey(tenantId, configKey).getOrNull()
-
-        return if (dynamicConfig != null) {
-            mapper.convert(dynamicConfig, configClass)
-        } else if (defaultProvider != null) {
-            defaultProvider()
-        } else {
-            throw IllegalArgumentException("Configuration not found for key: $configKey and tenantId: $tenantId")
-        }
+        return getConfig(tenantId, configKey, configClass) { defaultProvider() }
     }
 
     /**

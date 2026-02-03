@@ -1,7 +1,9 @@
 package com.module.multitenantbookingservice.core.strategy
 
+import com.module.multitenantbookingservice.commons.ValidationRequired
 import com.module.multitenantbookingservice.core.models.Venue
 import com.module.multitenantbookingservice.core.tenant.config.BookingTimeSlotConfig
+import com.module.multitenantbookingservice.security.BookingMustBeInConsecutiveHours
 import com.module.multitenantbookingservice.security.model.User
 import org.springframework.stereotype.Service
 
@@ -24,7 +26,24 @@ data class PricingContext(
     val venue: Venue,
     val bookingTimeSlots: MutableSet<BookingTimeSlotView>,
     val bookingTimeSlotConfig: BookingTimeSlotConfig,
-) {
+): ValidationRequired {
+    override fun validate(): MutableSet<Exception> {
+        val exceptions = mutableSetOf<Exception>()
+        // Basic validation for consecutive time slots
+        return exceptions
+    }
+
+    private fun validateConsecutiveHours(): Exception? {
+        val sortedHours = bookingTimeSlots.map { it.hour }.sorted()
+        for (idx in 1 until sortedHours.size) {
+            if (sortedHours[idx] != sortedHours[idx - 1] + 1) {
+                return BookingMustBeInConsecutiveHours.withDetails(
+                    "Booking time slots must be consecutive hours. Found gap between ${sortedHours[idx - 1]} and ${sortedHours[idx]}"
+                )
+            }
+        }
+        return null
+    }
 }
 
 data class PricingItemResult(
