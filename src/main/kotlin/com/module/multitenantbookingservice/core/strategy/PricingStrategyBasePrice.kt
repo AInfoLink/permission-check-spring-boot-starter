@@ -1,6 +1,6 @@
 package com.module.multitenantbookingservice.core.strategy
 
-import com.module.multitenantbookingservice.core.tenant.config.BookingTimeSlot
+import com.module.multitenantbookingservice.core.tenant.config.booking.BookingTimeSlot
 
 class PricingStrategyBasePrice(override var priority: Int) : PricingStrategy {
     override val name: String

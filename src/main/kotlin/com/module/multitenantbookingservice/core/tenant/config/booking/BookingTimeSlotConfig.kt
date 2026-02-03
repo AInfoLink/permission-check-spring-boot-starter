@@ -1,4 +1,4 @@
-package com.module.multitenantbookingservice.core.tenant.config
+package com.module.multitenantbookingservice.core.tenant.config.booking
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.module.multitenantbookingservice.commons.ValidationRequired
@@ -12,10 +12,6 @@ enum class TimeSlotType(val typeName: String) {
     PEAK("PEAK")                 // Peak hours
 }
 
-enum class TimeSlotInterval(val seconds: Int) {
-    HOURLY(3600),
-    HALF_HOURLY(1800),
-}
 
 class BookingTimeSlot(
     var slotType: TimeSlotType,
@@ -54,6 +50,20 @@ class BookingTimeSlotConfig(
 ): ValidationRequired {
     companion object {
         val CONFIG_KEY = "booking.time.slot.config"
+
+        fun default(): BookingTimeSlotConfig {
+            val config = BookingTimeSlotConfig()
+            for (hour in 0..23) {
+                val slot = BookingTimeSlot(
+                    slotType = TimeSlotType.REGULAR,
+                    hour = hour,
+                    priceMultiplier = 1.0,
+                    basePrice = 0
+                )
+                config.addTimeSlot(slot)
+            }
+            return config
+        }
     }
     fun addTimeSlot(timeSlot: BookingTimeSlot) {
         // Check for hour conflicts
@@ -67,18 +77,7 @@ class BookingTimeSlotConfig(
         timeSlots.add(timeSlot)
     }
 
-    fun withDefault(interval: TimeSlotInterval): BookingTimeSlotConfig {
-        for (hour in 0..23) {
-            val slot = BookingTimeSlot(
-                slotType = TimeSlotType.REGULAR,
-                hour = hour,
-                priceMultiplier = 1.0,
-                basePrice = 0
-            )
-            addTimeSlot(slot)
-        }
-        return this
-    }
+
 
 
     fun querySlot(hour: Int): BookingTimeSlot {

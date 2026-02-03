@@ -12,8 +12,9 @@ import com.module.multitenantbookingservice.payment.model.*
  * - 狀態轉移只能存在一個地方：initiate → callback → confirmed/failed
  * - 上層代碼只依賴此介面
  */
-interface PaymentService {
+interface PaymentService<T> {
 
+    fun getPaymentConfig(): T
     /**
      * 啟動付款流程（不保證付款完成）
      *

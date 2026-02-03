@@ -1,4 +1,4 @@
-package com.module.multitenantbookingservice.core.tenant.config
+package com.module.multitenantbookingservice.core.tenant.config.booking
 
 import com.module.multitenantbookingservice.core.tenant.service.DynamicConfigRetriever
 import com.module.multitenantbookingservice.core.tenant.service.GenericConfigRetriever
@@ -17,7 +17,7 @@ class BookingTimeSlotConfigRetriever(
             configKey = BookingTimeSlotConfig.CONFIG_KEY,
             configClass = BookingTimeSlotConfig::class.java
         ) {
-            BookingTimeSlotConfig().withDefault(TimeSlotInterval.HOURLY)
+            BookingTimeSlotConfig.default()
         }
     }
 

@@ -1,14 +1,21 @@
 package com.module.multitenantbookingservice.payment.vendor.line
 
+import com.module.multitenantbookingservice.core.tenant.config.payment.LinePayConfig
 import com.module.multitenantbookingservice.payment.PaymentService
 import com.module.multitenantbookingservice.payment.model.*
 import org.springframework.stereotype.Service
 
 
+
 @Service
 class LinePaymentService(
     private val lineClient: LineClient
-): PaymentService {
+): PaymentService<LinePayConfig> {
+
+
+    override fun getPaymentConfig(): LinePayConfig {
+        TODO("Not yet implemented")
+    }
 
     override fun initiatePayment(request: PaymentRequest): PaymentInitiationResult {
         val lineRequest = buildLinePaymentRequest(request)
