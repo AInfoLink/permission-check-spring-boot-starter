@@ -86,7 +86,7 @@ class LinePaymentService(
     }
 
     override fun getServiceName(): String {
-        return "linepay"
+        return "line"
     }
 
     private fun generatePackageId(): String {
