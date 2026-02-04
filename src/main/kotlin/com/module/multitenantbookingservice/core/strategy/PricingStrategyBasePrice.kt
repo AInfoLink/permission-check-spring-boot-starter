@@ -10,7 +10,6 @@ class PricingStrategyBasePrice(override var priority: Int) : PricingStrategy {
         val bookingTimeSlots: MutableSet<BookingTimeSlot> = mutableSetOf()
         context.bookingTimeSlots.forEach {
             val bookingTimeSlot =  context.bookingTimeSlotConfig.querySlot(it.hour)
-            bookingTimeSlot.isHalfHour = it.isHalfHour
             bookingTimeSlots.add(bookingTimeSlot)
         }
         bookingTimeSlots.forEach { slot ->

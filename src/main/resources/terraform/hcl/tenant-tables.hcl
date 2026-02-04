@@ -301,6 +301,39 @@ table "memberships" {
   }
 }
 
+table "membership_pricings" {
+  schema = schema.tenant
+
+  column "id" {
+    null = false
+    type = uuid
+  }
+  column "membership_id" {
+    null = false
+    type = uuid
+  }
+  column "discount_percentage" {
+    null = false
+    type = double_precision
+  }
+
+  primary_key {
+    columns = [column.id]
+  }
+  foreign_key "fk_membership_pricings_membership_id" {
+    columns     = [column.membership_id]
+    ref_columns = [table.memberships.column.id]
+    on_update   = NO_ACTION
+    on_delete   = CASCADE
+  }
+  unique "uq_membership_pricings_membership_id" {
+    columns = [column.membership_id]
+  }
+  index "idx_membership_pricings_membership_id" {
+    columns = [column.membership_id]
+  }
+}
+
 table "user_profiles" {
   schema = schema.tenant
 
