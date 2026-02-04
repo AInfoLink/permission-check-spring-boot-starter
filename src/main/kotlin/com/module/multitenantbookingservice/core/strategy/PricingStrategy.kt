@@ -1,12 +1,10 @@
 package com.module.multitenantbookingservice.core.strategy
 
 import com.module.multitenantbookingservice.commons.ValidationRequired
-import com.module.multitenantbookingservice.core.models.Venue
 import com.module.multitenantbookingservice.core.tenant.config.booking.BookingTimeSlotConfig
 import com.module.multitenantbookingservice.security.BookingMustBeInConsecutiveHours
 import com.module.multitenantbookingservice.security.model.User
 import org.springframework.stereotype.Service
-
 
 enum class Strategy(val strategyName: String) {
     BASE_PRICE("BasePrice"),
@@ -22,7 +20,6 @@ data class BookingTimeSlotView(
 
 data class PricingContext(
     val user: User,
-    val venue: Venue,
     val bookingTimeSlots: MutableSet<BookingTimeSlotView>,
     val bookingTimeSlotConfig: BookingTimeSlotConfig,
 ): ValidationRequired {
