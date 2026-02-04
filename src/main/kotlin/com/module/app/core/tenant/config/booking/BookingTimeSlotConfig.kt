@@ -61,7 +61,7 @@ class BookingTimeSlotConfig(
     val timeSlots: MutableSet<BookingTimeSlot> = mutableSetOf()
 ): ValidationRequired {
     companion object {
-        val CONFIG_KEY = TenantConfigUtils.getConfigKey(BookingTimeSlotConfig::class.java)
+        val CONFIG_KEY = TenantConfigUtils.getConfigKey(BookingTimeSlotConfig::class)
         fun default(): BookingTimeSlotConfig {
             val config = BookingTimeSlotConfig()
             for (hour in 0..23) {
