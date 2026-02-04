@@ -1,0 +1,42 @@
+package com.module.app.core.models
+
+import com.module.app.security.permission.HasResourceOwner
+import jakarta.persistence.*
+import org.hibernate.annotations.CreationTimestamp
+import org.hibernate.annotations.UpdateTimestamp
+import java.time.Instant
+import java.util.*
+
+@Entity
+@Table(name = "order_items")
+class OrderItem(
+    @Id
+    @Column(name = "id", nullable = false)
+    val id: UUID = UUID.randomUUID(),
+
+    @Column(name = "description", nullable = false, length = 500)
+    var description: String,
+
+    @Column(name = "amount", nullable = false)
+    var amount: Int,
+
+    @ManyToOne
+    @JoinColumn(name = "category_id", nullable = false)
+    var category: OrderItemCategory,
+
+    @ManyToOne
+    @JoinColumn(name = "order_id", nullable = false)
+    val order: Order,
+
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false)
+    val createdAt: Instant,
+
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
+    val updatedAt: Instant
+): HasResourceOwner {
+    override fun getResourceOwnerId(): String {
+        return order.getResourceOwnerId()
+    }
+}
