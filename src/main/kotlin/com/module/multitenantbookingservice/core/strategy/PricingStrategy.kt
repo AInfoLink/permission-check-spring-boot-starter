@@ -1,9 +1,9 @@
 package com.module.multitenantbookingservice.core.strategy
 
 import com.module.multitenantbookingservice.commons.ValidationRequired
+import com.module.multitenantbookingservice.core.models.UserProfile
 import com.module.multitenantbookingservice.core.tenant.config.booking.BookingTimeSlotConfig
 import com.module.multitenantbookingservice.security.BookingMustBeInConsecutiveHours
-import com.module.multitenantbookingservice.security.model.User
 import org.springframework.stereotype.Service
 
 enum class Strategy(val strategyName: String) {
@@ -19,7 +19,7 @@ data class BookingTimeSlotView(
 )
 
 data class PricingContext(
-    val user: User,
+    val profile: UserProfile,
     val bookingTimeSlots: MutableSet<BookingTimeSlotView>,
     val bookingTimeSlotConfig: BookingTimeSlotConfig,
 ): ValidationRequired {
@@ -46,7 +46,7 @@ data class PricingItemResult(
     val timeRange: TimeRange,
     val itemName: String,
     val description: String,
-    val price: Double
+    var price: Double
 )
 
 data class PricingResult(

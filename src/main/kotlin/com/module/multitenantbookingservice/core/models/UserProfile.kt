@@ -86,5 +86,10 @@ class UserProfile(
         return user.id.toString()
     }
 
+    // Returns the discount percentage associated with the user's membership. If no membership is assigned, returns 0.0 (no discount).
+    fun getMembershipDiscountPercentageOff(): Double {
+        return membership?.pricing?.getDiscountPercentage() ?: 0.0
+    }
+
 
 }

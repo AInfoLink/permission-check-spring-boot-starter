@@ -42,5 +42,22 @@ class MembershipPricing(
     val membership: Membership,
 
     @Column(name = "discount_percentage", nullable = false)
-    val discountPercentage: Double,
-)
+    private var discountPercentage: Double,
+) {
+    init {
+        require(discountPercentage in 0.0..100.0) {
+            "Discount percentage must be between 0 and 100"
+        }
+    }
+
+    fun setDiscountPercentage(percentage: Double) {
+        require(percentage in 0.0..100.0) {
+            "Discount percentage must be between 0 and 100"
+        }
+        this.discountPercentage = percentage
+    }
+
+    fun getDiscountPercentage(): Double {
+        return discountPercentage
+    }
+}
