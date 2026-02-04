@@ -41,6 +41,31 @@ enum "order_item_reference_type" {
   ]
 }
 
+enum "order_identity_type" {
+  schema = schema.tenant
+  values = ["USER", "GUEST", "SYSTEM"]
+}
+
+enum "payment_status" {
+  schema = schema.tenant
+  values = ["PENDING", "PAID", "FAILED"]
+}
+
+enum "booking_slot_type" {
+  schema = schema.tenant
+  values = ["HALF_HOUR", "ONE_HOUR"]
+}
+
+enum "booking_duration" {
+  schema = schema.tenant
+  values = ["FIRST_HALF_HOUR", "SECOND_HALF_HOUR", "FULL_HOUR"]
+}
+
+enum "booking_status" {
+  schema = schema.tenant
+  values = ["PENDING", "CONFIRMED", "CANCELLED", "COMPLETED"]
+}
+
 
 
 table "order_identities" {
@@ -64,7 +89,7 @@ table "order_identities" {
   }
   column "type" {
     null = false
-    type = character_varying(50)
+    type = enum.order_identity_type
   }
   column "user_id" {
     null = true
@@ -78,9 +103,6 @@ table "order_identities" {
     ref_columns = [table.users.column.id]
     on_update   = NO_ACTION
     on_delete   = NO_ACTION
-  }
-  check "order_identities_type_check" {
-    expr = "((type)::text = ANY ((ARRAY['USER'::character varying, 'GUEST'::character varying, 'SYSTEM'::character varying])::text[]))"
   }
 }
 
@@ -159,7 +181,7 @@ table "orders" {
   }
   column "payment_status" {
     null = false
-    type = character_varying(50)
+    type = enum.payment_status
   }
   column "updated_at" {
     null = false
@@ -177,9 +199,6 @@ table "orders" {
     ref_columns = [table.order_identities.column.id]
     on_update   = NO_ACTION
     on_delete   = NO_ACTION
-  }
-  check "orders_payment_status_check" {
-    expr = "((payment_status)::text = ANY ((ARRAY['PENDING'::character varying, 'PAID'::character varying, 'FAILED'::character varying])::text[]))"
   }
 }
 
@@ -236,7 +255,7 @@ table "venues" {
   }
   column "booking_slot_type" {
     null = false
-    type = character_varying(50)
+    type = enum.booking_slot_type
   }
   column "is_schedule_active" {
     null = false
@@ -254,9 +273,6 @@ table "venues" {
     ref_columns = [table.venue_groups.column.id]
     on_update   = NO_ACTION
     on_delete   = NO_ACTION
-  }
-  check "venues_booking_slot_type_check" {
-    expr = "((booking_slot_type)::text = ANY ((ARRAY['HALF_HOUR'::character varying, 'ONE_HOUR'::character varying])::text[]))"
   }
 }
 
@@ -452,11 +468,11 @@ table "venue_booking_requests" {
   }
   column "duration" {
     null = false
-    type = character_varying(50)
+    type = enum.booking_duration
   }
   column "status" {
     null = false
-    type = character_varying(50)
+    type = enum.booking_status
   }
   column "order_identity_id" {
     null = false
@@ -511,12 +527,6 @@ table "venue_booking_requests" {
 
   check "booking_requests_hour_check" {
     expr = "((hour >= 0) AND (hour <= 23))"
-  }
-  check "booking_requests_duration_check" {
-    expr = "((duration)::text = ANY ((ARRAY['FIRST_HALF_HOUR'::character varying, 'SECOND_HALF_HOUR'::character varying, 'FULL_HOUR'::character varying])::text[]))"
-  }
-  check "booking_requests_status_check" {
-    expr = "((status)::text = ANY ((ARRAY['PENDING'::character varying, 'CONFIRMED'::character varying, 'CANCELLED'::character varying, 'COMPLETED'::character varying])::text[]))"
   }
 }
 
