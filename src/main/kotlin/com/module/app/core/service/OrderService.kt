@@ -3,13 +3,10 @@ package com.module.app.core.service
 import com.module.app.core.models.*
 import com.module.app.core.repository.OrderIdentityRepository
 import com.module.app.core.repository.OrderRepository
-import com.module.app.core.repository.OrderItemCategoryRepository
 import com.module.app.security.OrderIdentityAlreadyExists
 import com.module.app.security.OrderIdentityNotFound
 import com.module.app.security.OrderNotFound
 import com.module.app.security.UserNotFound
-import com.module.app.security.ItemCategoryNotFound
-import com.module.app.security.InvalidAmountForCategory
 import com.module.app.security.annotation.Permission
 import com.module.app.security.annotation.Require
 import com.module.app.security.repository.UserRepository
@@ -33,7 +30,8 @@ data class OrderIdentityCreation(
 data class OrderItemCreation(
     val description: String,
     val amount: Int,
-    val categoryId: UUID
+    val referenceType: ReferenceType,
+    val referenceId: UUID
 )
 
 data class OrderCreation(
@@ -76,8 +74,7 @@ interface OrderService {
 class DefaultOrderService(
     private val orderRepository: OrderRepository,
     private val orderIdentityRepository: OrderIdentityRepository,
-    private val userRepository: UserRepository,
-    private val orderItemCategoryRepository: OrderItemCategoryRepository
+    private val userRepository: UserRepository
 ): OrderService {
 
     private val logger = LoggerFactory.getLogger(DefaultOrderService::class.java)
@@ -141,20 +138,14 @@ class DefaultOrderService(
 
         // Create order items
         order.items.forEach { itemData ->
-            logger.debug("Processing order item - category: ${itemData.categoryId}, amount: ${itemData.amount}")
+            logger.debug("Processing order item - reference type: ${itemData.referenceType}, reference ID: ${itemData.referenceId}, amount: ${itemData.amount}")
 
-            val category = orderItemCategoryRepository.findById(itemData.categoryId).getOrNull() ?: run {
-                logger.error("Order item creation failed - category not found: ${itemData.categoryId}")
-                throw ItemCategoryNotFound
-            }
-
-            // Validate amount according to category operation type
-            validateAmountForCategory(category, itemData.amount)
             val orderItem = OrderItem(
                 description = itemData.description,
                 amount = itemData.amount,
-                category = category,
                 order = newOrder,
+                referenceType = itemData.referenceType,
+                referenceId = itemData.referenceId,
                 createdAt = Instant.now(),
                 updatedAt = Instant.now()
             )
@@ -268,15 +259,4 @@ class DefaultOrderService(
     }
 
 
-    fun validateAmountForCategory(category: OrderItemCategory, amount: Int) {
-        logger.debug("Validating amount $amount for category: ${category.code} (${category.operationType})")
-
-        if (!category.validateAmountForOperationType(amount)) {
-            val errorMessage = "Amount $amount is invalid for category ${category.code} with operation type ${category.operationType}"
-            logger.error("Amount validation failed: $errorMessage")
-            throw InvalidAmountForCategory.withDetails(errorMessage)
-        }
-
-        logger.debug("Amount validation successful for category: ${category.code}")
-    }
 }

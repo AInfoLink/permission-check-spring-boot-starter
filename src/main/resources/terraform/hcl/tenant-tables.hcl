@@ -10,64 +10,38 @@ schema "tenant" {
   name = var.tenant
 }
 
-
-table "order_item_categories" {
+enum "order_item_reference_type" {
   schema = schema.tenant
-  column "id" {
-    null = false
-    type = uuid
-  }
-  column "code" {
-    null = false
-    type = character_varying(50)
-  }
-  column "created_at" {
-    null = false
-    type = timestamptz
-  }
-  column "description" {
-    null = true
-    type = character_varying(500)
-  }
-  column "is_active" {
-    null = false
-    type = boolean
-  }
-  column "name" {
-    null = false
-    type = character_varying(100)
-  }
-  column "operation_type" {
-    null = false
-    type = character_varying(20)
-  }
-  column "type" {
-    null = false
-    type = character_varying(20)
-  }
-  column "updated_at" {
-    null = false
-    type = timestamptz
-  }
-  primary_key {
-    columns = [column.id]
-  }
-  index "idx_item_categories_operation_type" {
-    columns = [column.operation_type]
-  }
-  index "idx_item_categories_type" {
-    columns = [column.type]
-  }
-  check "item_categories_operation_type_check" {
-    expr = "((operation_type)::text = ANY ((ARRAY['CHARGE'::character varying, 'REFUND'::character varying, 'NEUTRAL'::character varying])::text[]))"
-  }
-  check "item_categories_type_check" {
-    expr = "((type)::text = ANY ((ARRAY['SYSTEM_MANAGED'::character varying, 'USER_MANAGED'::character varying])::text[]))"
-  }
-  unique "idx_item_categories_code" {
-    columns = [column.code]
-  }
+  values = [
+    "VENUE_BOOKING_REQUEST",
+    "MEMBERSHIP_UPGRADE",
+    "BOOKING_ITEM_DETAIL",
+    "QUANTITY_BOOKING_REQUEST",
+    "QUARTERLY_BOOKING",
+    "WALLET_RECHARGE",
+    "WALLET_TRANSACTION",
+    "WALLET_ADJUSTMENT",
+    "DISCOUNT_COUPON",
+    "PROMOTIONAL_DISCOUNT",
+    "MEMBERSHIP_DISCOUNT",
+    "BULK_BOOKING_DISCOUNT",
+    "MERCHANDISE_ITEM",
+    "SERVICE_ADDON",
+    "EQUIPMENT_RENTAL",
+    "REFUND_REQUEST",
+    "PARTIAL_REFUND",
+    "ADMIN_ADJUSTMENT",
+    "PENALTY_FEE",
+    "LATE_CANCELLATION_FEE",
+    "GIFT_CARD",
+    "LOYALTY_POINTS_REDEMPTION",
+    "PACKAGE_DEAL",
+    "TAX_ADJUSTMENT",
+    "SYSTEM_CORRECTION"
+  ]
 }
+
+
 
 table "order_identities" {
   schema = schema.tenant
@@ -133,11 +107,17 @@ table "order_items" {
     null = false
     type = timestamptz
   }
-  column "category_id" {
+
+
+  column "order_id" {
     null = false
     type = uuid
   }
-  column "order_id" {
+  column "reference_type" {
+    null = false
+    type = enum.order_item_reference_type
+  }
+  column "reference_id" {
     null = false
     type = uuid
   }
@@ -150,11 +130,11 @@ table "order_items" {
     on_update   = NO_ACTION
     on_delete   = NO_ACTION
   }
-  foreign_key "fk_order_items_category_id" {
-    columns     = [column.category_id]
-    ref_columns = [table.order_item_categories.column.id]
-    on_update   = NO_ACTION
-    on_delete   = NO_ACTION
+  index "idx_order_items_reference_type" {
+    columns = [column.reference_type]
+  }
+  index "idx_order_items_reference_id" {
+    columns = [column.reference_id]
   }
 }
 
@@ -448,6 +428,95 @@ table "user_profile_tenant_roles" {
     ref_columns = [table.tenant_roles.column.role_id]
     on_update   = NO_ACTION
     on_delete   = CASCADE
+  }
+}
+
+table "venue_booking_requests" {
+  schema = schema.tenant
+
+  column "id" {
+    null = false
+    type = uuid
+  }
+  column "venue_id" {
+    null = false
+    type = uuid
+  }
+  column "date" {
+    null = false
+    type = date
+  }
+  column "hour" {
+    null = false
+    type = integer
+  }
+  column "duration" {
+    null = false
+    type = character_varying(50)
+  }
+  column "status" {
+    null = false
+    type = character_varying(50)
+  }
+  column "order_identity_id" {
+    null = false
+    type = uuid
+  }
+  column "notes" {
+    null = true
+    type = character_varying(1000)
+  }
+  column "created_at" {
+    null = false
+    type = timestamptz
+  }
+  column "updated_at" {
+    null = false
+    type = timestamptz
+  }
+
+  primary_key {
+    columns = [column.id]
+  }
+
+  foreign_key "fk_booking_requests_venue_id" {
+    columns     = [column.venue_id]
+    ref_columns = [table.venues.column.id]
+    on_update   = NO_ACTION
+    on_delete   = NO_ACTION
+  }
+  foreign_key "fk_booking_requests_order_identity_id" {
+    columns     = [column.order_identity_id]
+    ref_columns = [table.order_identities.column.id]
+    on_update   = NO_ACTION
+    on_delete   = NO_ACTION
+  }
+
+  unique "uq_booking_requests_venue_date_hour_duration" {
+    columns = [column.venue_id, column.date, column.hour, column.duration]
+  }
+
+  index "idx_booking_requests_venue_id" {
+    columns = [column.venue_id]
+  }
+  index "idx_booking_requests_date" {
+    columns = [column.date]
+  }
+  index "idx_booking_requests_status" {
+    columns = [column.status]
+  }
+  index "idx_booking_requests_order_identity_id" {
+    columns = [column.order_identity_id]
+  }
+
+  check "booking_requests_hour_check" {
+    expr = "((hour >= 0) AND (hour <= 23))"
+  }
+  check "booking_requests_duration_check" {
+    expr = "((duration)::text = ANY ((ARRAY['FIRST_HALF_HOUR'::character varying, 'SECOND_HALF_HOUR'::character varying, 'FULL_HOUR'::character varying])::text[]))"
+  }
+  check "booking_requests_status_check" {
+    expr = "((status)::text = ANY ((ARRAY['PENDING'::character varying, 'CONFIRMED'::character varying, 'CANCELLED'::character varying, 'COMPLETED'::character varying])::text[]))"
   }
 }
 

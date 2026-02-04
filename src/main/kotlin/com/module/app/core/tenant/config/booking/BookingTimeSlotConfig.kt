@@ -5,6 +5,7 @@ import com.module.app.commons.annotation.TenantConfig
 import com.module.app.commons.contract.HasDefault
 import com.module.app.commons.contract.ValidationRequired
 import com.module.app.commons.utils.TenantConfigUtils
+import com.module.app.core.models.TimeSlotDuration
 import com.module.app.core.strategy.TimeRange
 import com.module.app.security.TimeSlotOverlap
 import java.time.LocalTime
@@ -13,12 +14,6 @@ enum class TimeSlotType(val typeName: String) {
     UNATTENDED("UNATTENDED"),    // Off-peak hours
     REGULAR("REGULAR"),          // Regular hours
     PEAK("PEAK")                 // Peak hours
-}
-
-enum class TimeSlotDuration {
-    FIRST_HALF_HOUR, // 上半小時
-    SECOND_HALF_HOUR, // 下半小時
-    FULL_HOUR // 全小時
 }
 
 
