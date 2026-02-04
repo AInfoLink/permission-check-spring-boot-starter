@@ -15,7 +15,7 @@ class LinePayConfigRetriever(
             configKey = LinePayConfig.CONFIG_KEY,
             configClass = LinePayConfig::class.java
         ) {
-            LinePayConfig.default()
+            LinePayConfig().withDefault()
         }
     }
 

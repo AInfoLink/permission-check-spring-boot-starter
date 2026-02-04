@@ -17,7 +17,7 @@ class BookingTimeSlotConfigRetriever(
             configKey = BookingTimeSlotConfig.CONFIG_KEY,
             configClass = BookingTimeSlotConfig::class.java
         ) {
-            BookingTimeSlotConfig.default()
+            BookingTimeSlotConfig().withDefault()
         }
     }
 

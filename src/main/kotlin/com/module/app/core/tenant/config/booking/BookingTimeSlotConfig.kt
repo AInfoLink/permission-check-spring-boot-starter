@@ -2,6 +2,7 @@ package com.module.app.core.tenant.config.booking
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.module.app.commons.annotation.TenantConfig
+import com.module.app.commons.contract.HasDefault
 import com.module.app.commons.contract.ValidationRequired
 import com.module.app.commons.utils.TenantConfigUtils
 import com.module.app.core.strategy.TimeRange
@@ -59,22 +60,10 @@ class BookingTimeSlot(
 class BookingTimeSlotConfig(
     val isConfigured : Boolean = false,
     val timeSlots: MutableSet<BookingTimeSlot> = mutableSetOf()
-): ValidationRequired {
+): ValidationRequired, HasDefault<BookingTimeSlotConfig> {
     companion object {
         val CONFIG_KEY = TenantConfigUtils.getConfigKey(BookingTimeSlotConfig::class)
-        fun default(): BookingTimeSlotConfig {
-            val config = BookingTimeSlotConfig()
-            for (hour in 0..23) {
-                val slot = BookingTimeSlot(
-                    slotType = TimeSlotType.REGULAR,
-                    hour = hour,
-                    priceMultiplier = 1.0,
-                    basePrice = 0
-                )
-                config.addTimeSlot(slot)
-            }
-            return config
-        }
+
     }
     fun addTimeSlot(timeSlot: BookingTimeSlot) {
         // Check for hour conflicts
@@ -99,4 +88,17 @@ class BookingTimeSlotConfig(
         return mutableSetOf()
     }
 
+    override fun withDefault(): BookingTimeSlotConfig {
+        val config = BookingTimeSlotConfig()
+        for (hour in 0..23) {
+            val slot = BookingTimeSlot(
+                slotType = TimeSlotType.REGULAR,
+                hour = hour,
+                priceMultiplier = 1.0,
+                basePrice = 0
+            )
+            config.addTimeSlot(slot)
+        }
+        return config
+    }
 }
