@@ -1,11 +1,13 @@
 package com.module.multitenantbookingservice.core.tenant.config.payment
 
-import com.module.multitenantbookingservice.commons.ValidationRequired
+import com.module.multitenantbookingservice.commons.annotation.SystemManaged
+import com.module.multitenantbookingservice.commons.contract.ValidationRequired
 
 data class LinePayConfig(
+    @SystemManaged
+    var apiBaseUrl: String,
     var channelId: String,
     var channelSecret: String,
-    var apiBaseUrl: String
 ): ValidationRequired {
 
     companion object {

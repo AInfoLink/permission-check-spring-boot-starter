@@ -1,6 +1,6 @@
 package com.module.multitenantbookingservice.core.tenant.service
 
-import com.module.multitenantbookingservice.commons.ValidationRequired
+import com.module.multitenantbookingservice.commons.contract.ValidationRequired
 import com.module.multitenantbookingservice.core.models.DynamicConfig
 import com.module.multitenantbookingservice.core.repository.DynamicConfigRepository
 import com.module.multitenantbookingservice.system.tenancy.context.TenantContextHolder

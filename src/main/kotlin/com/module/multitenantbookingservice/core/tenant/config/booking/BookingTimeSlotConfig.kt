@@ -1,7 +1,7 @@
 package com.module.multitenantbookingservice.core.tenant.config.booking
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.module.multitenantbookingservice.commons.ValidationRequired
+import com.module.multitenantbookingservice.commons.contract.ValidationRequired
 import com.module.multitenantbookingservice.core.strategy.TimeRange
 import com.module.multitenantbookingservice.security.TimeSlotOverlap
 import java.time.LocalTime

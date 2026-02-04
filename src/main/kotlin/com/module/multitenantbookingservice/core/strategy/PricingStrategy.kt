@@ -1,6 +1,6 @@
 package com.module.multitenantbookingservice.core.strategy
 
-import com.module.multitenantbookingservice.commons.ValidationRequired
+import com.module.multitenantbookingservice.commons.contract.ValidationRequired
 import com.module.multitenantbookingservice.core.models.UserProfile
 import com.module.multitenantbookingservice.core.tenant.config.booking.BookingTimeSlotConfig
 import com.module.multitenantbookingservice.security.BookingMustBeInConsecutiveHours
