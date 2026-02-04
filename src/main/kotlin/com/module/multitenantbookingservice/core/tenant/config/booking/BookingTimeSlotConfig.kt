@@ -12,15 +12,22 @@ enum class TimeSlotType(val typeName: String) {
     PEAK("PEAK")                 // Peak hours
 }
 
-
+enum class TimeSlotDuration {
+    FIRST_HALF_HOUR, // 上半小時
+    SECOND_HALF_HOUR, // 下半小時
+    FULL_HOUR // 全小時
+}
 class BookingTimeSlot(
     var slotType: TimeSlotType,
     val hour: Int, // 0-23，代表這個小時
     val priceMultiplier: Double, // 1.0 = base price, 1.5 = 50% markup, 0.8 = 20% discount
     val additionalFee: Double = 0.0,  // Additional fee
     var basePrice: Int,
-    var isHalfHour: Boolean = false
+    val duration: TimeSlotDuration = TimeSlotDuration.FULL_HOUR // 時間段
 ) {
+
+    val isHalfHour: Boolean get() = duration != TimeSlotDuration.FULL_HOUR
+
     init {
         require(hour in 0..23) { "Hour must be between 0-23" }
         require(priceMultiplier >= 0) { "Price multiplier cannot be negative" }

@@ -2,6 +2,14 @@ package com.module.multitenantbookingservice.payment
 
 import com.module.multitenantbookingservice.payment.model.*
 
+enum class PaymentServiceType(name: String) {
+    LINE("line"),
+    EC("ec"),
+    JKO("jko"),
+    WALLET("wallet")
+}
+
+
 /**
  * 核心付款服務介面
  *
@@ -35,12 +43,12 @@ interface PaymentService<T> {
      * @param callback 金流系統的回調資料
      * @return 付款最終結果
      */
-    fun handlePaymentCallback(callback: PaymentCallback): PaymentResult
+    fun handlePaymentCallback(callback: PaymentCallback, hookAction: (() -> Unit)? = null): PaymentResult
 
     /**
      * 取得付款服務的識別名稱
      *
      * @return 付款服務名稱（如：linepay, ecpay, jkopay）
      */
-    fun getServiceName(): String
+    fun getServiceType(): PaymentServiceType
 }

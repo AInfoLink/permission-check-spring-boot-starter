@@ -3,7 +3,9 @@ package com.module.multitenantbookingservice.payment.vendor.line
 import com.module.multitenantbookingservice.core.tenant.config.payment.LinePayConfig
 import com.module.multitenantbookingservice.core.tenant.config.payment.LinePayConfigRetriever
 import com.module.multitenantbookingservice.payment.PaymentService
+import com.module.multitenantbookingservice.payment.PaymentServiceType
 import com.module.multitenantbookingservice.payment.model.*
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 
 
@@ -13,7 +15,7 @@ class LinePaymentService(
     private val lineClient: LineClient,
     private val linePayConfigRetriever: LinePayConfigRetriever
 ): PaymentService<LinePayConfig> {
-
+    private val logger = LoggerFactory.getLogger(LinePaymentService::class.java)
 
     override fun getPaymentConfig(): LinePayConfig {
         return linePayConfigRetriever.getConfig()
@@ -47,7 +49,7 @@ class LinePaymentService(
         }
     }
 
-    override fun handlePaymentCallback(callback: PaymentCallback): PaymentResult {
+    override fun handlePaymentCallback(callback: PaymentCallback, hookAction: (() -> Unit)?): PaymentResult {
         return try {
             // Extract amount from rawData since PaymentCallback doesn't have amount directly
             val amount = (callback.rawData["amount"] as? Number)?.toLong() ?: 0L
@@ -60,6 +62,8 @@ class LinePaymentService(
             val response = lineClient.confirmPayment(transactionId, confirmRequest)
 
             if (response.returnCode == "0000") {
+                logger.info("Line Pay payment confirmed successfully for transactionId: $transactionId")
+                hookAction?.invoke()
                 PaymentResult(
                     status = PaymentStatus.SUCCESS,
                     paymentId = response.info?.transactionId,
@@ -72,6 +76,7 @@ class LinePaymentService(
                         "orderId" to (response.info?.orderId ?: "")
                     )
                 )
+
             } else {
                 PaymentResult(
                     status = PaymentStatus.FAILED,
@@ -94,8 +99,8 @@ class LinePaymentService(
         }
     }
 
-    override fun getServiceName(): String {
-        return "line"
+    override fun getServiceType(): PaymentServiceType {
+        return PaymentServiceType.LINE
     }
 
     private fun generatePackageId(): String {

@@ -122,11 +122,6 @@ data class PaymentCallback(
     val rawData: Map<String, Any>,
 
     /**
-     * 簽名（如果有）
-     */
-    val signature: String? = null,
-
-    /**
      * 回調時間
      */
     val timestamp: LocalDateTime = LocalDateTime.now()

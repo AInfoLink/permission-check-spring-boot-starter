@@ -24,13 +24,13 @@ class PaymentGateway(
     /**
      * 根據服務名稱取得付款服務
      *
-     * @param serviceName 服務名稱（如：linepay, ecpay）
+     * @param serviceType 服務名稱（如：linepay, ecpay）
      * @return 對應的付款服務
      * @throws PaymentServiceNotFoundException 找不到服務時拋出
      */
-    fun getPaymentService(serviceName: String): PaymentService<*> {
-        return paymentServices.find { it.getServiceName() == serviceName }
-            ?: throw PaymentServiceNotFoundException("Payment service not found: $serviceName")
+    fun getPaymentService(serviceType: PaymentServiceType): PaymentService<*> {
+        return paymentServices.find { it.getServiceType() == serviceType }
+            ?: throw PaymentServiceNotFoundException("Payment service not found: $serviceType")
     }
 
     /**
@@ -39,7 +39,7 @@ class PaymentGateway(
     fun getAvailableServices(): List<PaymentServiceContext> {
         return paymentServices.map { service ->
             PaymentServiceContext(
-                name = service.getServiceName(),
+                serviceType = service.getServiceType(),
                 capabilities = getServiceCapabilities(service)
             )
         }
@@ -48,8 +48,8 @@ class PaymentGateway(
     /**
      * 檢查服務是否支援特定能力
      */
-    fun hasCapability(serviceName: String, capability: PaymentCapabilityType): Boolean {
-        val service = getPaymentService(serviceName)
+    fun hasCapability(serviceType: PaymentServiceType, capability: PaymentCapabilityType): Boolean {
+        val service = getPaymentService(serviceType)
         return when (capability) {
             PaymentCapabilityType.REFUND -> service is RefundCapability
             PaymentCapabilityType.QUERY -> service is QueryCapability
@@ -110,7 +110,7 @@ enum class PaymentCapabilityType {
  * 付款服務資訊
  */
 data class PaymentServiceContext(
-    val name: String,
+    val serviceType: PaymentServiceType,
     val capabilities: Set<PaymentCapabilityType>
 )
 
