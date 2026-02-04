@@ -49,6 +49,9 @@ class UserProfile(
     @Column(name = "is_active", nullable = false)
     var isActive: Boolean = true,
 
+    @ManyToOne
+    @JoinColumn(name = "membership_id", nullable = true)
+    val membership: Membership? = null,
 
     @Column(name = "wallet_balance", nullable = false)
     var walletBalance: Int = 0,
@@ -82,4 +85,6 @@ class UserProfile(
     override fun getResourceOwnerId(): String {
         return user.id.toString()
     }
+
+
 }

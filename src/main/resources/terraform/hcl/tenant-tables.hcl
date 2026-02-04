@@ -280,6 +280,27 @@ table "venues" {
   }
 }
 
+table "memberships" {
+  schema = schema.tenant
+
+  column "id" {
+    null = false
+    type = uuid
+  }
+  column "name" {
+    null = false
+    type = character_varying(100)
+  }
+  column "description" {
+    null = true
+    type = character_varying(500)
+  }
+
+  primary_key {
+    columns = [column.id]
+  }
+}
+
 table "user_profiles" {
   schema = schema.tenant
 
@@ -303,6 +324,10 @@ table "user_profiles" {
     null = false
     type = uuid
   }
+  column "membership_id" {
+    null = true
+    type = uuid
+  }
 
   primary_key {
     columns = [column.id]
@@ -313,11 +338,20 @@ table "user_profiles" {
     on_update   = NO_ACTION
     on_delete   = NO_ACTION
   }
+  foreign_key "fk_user_profiles_membership_id" {
+    columns     = [column.membership_id]
+    ref_columns = [table.memberships.column.id]
+    on_update   = NO_ACTION
+    on_delete   = SET_NULL
+  }
   index "idx_user_profiles_active" {
     columns = [column.is_active]
   }
   index "idx_user_profiles_user_id" {
     columns = [column.user_id]
+  }
+  index "idx_user_profiles_membership_id" {
+    columns = [column.membership_id]
   }
 }
 
