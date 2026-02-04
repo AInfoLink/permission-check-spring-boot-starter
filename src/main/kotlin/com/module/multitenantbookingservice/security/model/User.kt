@@ -9,9 +9,7 @@ import kotlin.jvm.Transient
 
 
 enum class Role(val value: String) {
-    SUPER_ADMIN("ROLE_SUPER_ADMIN"),
     ADMIN("ROLE_ADMIN"),
-    EMPLOYEE("ROLE_EMPLOYEE"),
     USER("ROLE_USER"),
 }
 data class UserView(
