@@ -1,9 +1,10 @@
 package com.module.app.core.service
 
 import com.module.app.core.models.OrderItem
-import com.module.app.core.models.ReferenceType
 import com.module.app.core.repository.OrderItemRepository
-import com.module.app.security.*
+import com.module.app.security.BulkUpdatePartialFailure
+import com.module.app.security.OrderAlreadyPaidModificationDenied
+import com.module.app.security.OrderItemNotFound
 import com.module.app.security.annotation.Permission
 import com.module.app.security.annotation.Require
 import org.springframework.stereotype.Service
@@ -24,8 +25,6 @@ data class BulkOrderItemUpdate(
 
 interface OrderItemService {
     fun getOrderItem(itemId: UUID): OrderItem
-    fun getOrderItemsByReferenceType(referenceType: ReferenceType): List<OrderItem>
-    fun getOrderItemByReference(referenceType: ReferenceType, referenceId: UUID): OrderItem
     fun getAllOrderItems(): List<OrderItem>
     fun updateOrderItem(itemId: UUID, update: OrderItemUpdate): OrderItem
     fun bulkUpdateOrderItems(bulkUpdate: BulkOrderItemUpdate): List<OrderItem>
@@ -44,24 +43,6 @@ class DefaultOrderItemService(
     @Transactional(readOnly = true)
     override fun getOrderItem(itemId: UUID): OrderItem {
         return orderItemRepository.findById(itemId).getOrNull() ?: throw OrderItemNotFound
-    }
-
-    /**
-     * 根據參考類型查詢訂單項目
-     */
-    @Require(Permission.ORDER_ITEMS_READ)
-    @Transactional(readOnly = true)
-    override fun getOrderItemsByReferenceType(referenceType: ReferenceType): List<OrderItem> {
-        return orderItemRepository.findByReferenceType(referenceType)
-    }
-
-    /**
-     * 根據參考類型和 ID 查詢訂單項目
-     */
-    @Require(Permission.ORDER_ITEMS_READ)
-    @Transactional(readOnly = true)
-    override fun getOrderItemByReference(referenceType: ReferenceType, referenceId: UUID): OrderItem {
-        return orderItemRepository.findByReferenceTypeAndReferenceId(referenceType, referenceId).getOrNull() ?: throw OrderItemNotFound
     }
 
     /**
