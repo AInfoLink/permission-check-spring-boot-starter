@@ -1,4 +1,7 @@
 package com.module.app.core.service
 
-class BookingService {
+interface BookingService {
+}
+
+class DefaultBookingService: BookingService {
 }

@@ -51,7 +51,7 @@ class BookingTimeSlot(
     }
 }
 
-@TenantConfig("booking.time.slot.config")
+@TenantConfig("booking.timeslot")
 class BookingTimeSlotConfig(
     val isConfigured : Boolean = false,
     val timeSlots: MutableSet<BookingTimeSlot> = mutableSetOf()

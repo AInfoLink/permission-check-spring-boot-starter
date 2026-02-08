@@ -7,7 +7,12 @@ import java.util.*
 
 
 @Entity
-@Table(name = "venues")
+@Table(name = "venues"
+, uniqueConstraints = [
+    UniqueConstraint(columnNames = ["priority", "venue_group_id"]),
+    UniqueConstraint(columnNames = ["name", "venue_group_id"])
+]
+)
 class Venue(
     @Id
     @Column(name = "id", nullable = false)
@@ -31,5 +36,8 @@ class Venue(
     var venueGroup: VenueGroup,
 
     @Embedded
-    var scheduleConfig: VenueScheduleConfig = VenueScheduleConfig()
+    var scheduleConfig: VenueScheduleConfig = VenueScheduleConfig(),
+
+    @Column(name = "priority", nullable = false)
+    var priority: Int = 0
 )

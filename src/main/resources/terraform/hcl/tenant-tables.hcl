@@ -265,6 +265,10 @@ table "venues" {
     null = false
     type = uuid
   }
+  column "priority" {
+    null = false
+    type = integer
+  }
   primary_key {
     columns = [column.id]
   }
@@ -273,6 +277,12 @@ table "venues" {
     ref_columns = [table.venue_groups.column.id]
     on_update   = NO_ACTION
     on_delete   = NO_ACTION
+  }
+  unique "uq_venues_priority_venue_group_id" {
+    columns = [column.priority, column.venue_group_id]
+  }
+  unique "uq_venues_name_venue_group_id" {
+    columns = [column.name, column.venue_group_id]
   }
 }
 
