@@ -10,36 +10,6 @@ schema "tenant" {
   name = var.tenant
 }
 
-enum "order_item_reference_type" {
-  schema = schema.tenant
-  values = [
-    "VENUE_BOOKING_REQUEST",
-    "MEMBERSHIP_UPGRADE",
-    "BOOKING_ITEM_DETAIL",
-    "QUANTITY_BOOKING_REQUEST",
-    "QUARTERLY_BOOKING",
-    "WALLET_RECHARGE",
-    "WALLET_TRANSACTION",
-    "WALLET_ADJUSTMENT",
-    "DISCOUNT_COUPON",
-    "PROMOTIONAL_DISCOUNT",
-    "MEMBERSHIP_DISCOUNT",
-    "BULK_BOOKING_DISCOUNT",
-    "MERCHANDISE_ITEM",
-    "SERVICE_ADDON",
-    "EQUIPMENT_RENTAL",
-    "REFUND_REQUEST",
-    "PARTIAL_REFUND",
-    "ADMIN_ADJUSTMENT",
-    "PENALTY_FEE",
-    "LATE_CANCELLATION_FEE",
-    "GIFT_CARD",
-    "LOYALTY_POINTS_REDEMPTION",
-    "PACKAGE_DEAL",
-    "TAX_ADJUSTMENT",
-    "SYSTEM_CORRECTION"
-  ]
-}
 
 enum "order_identity_type" {
   schema = schema.tenant
@@ -63,7 +33,7 @@ enum "booking_duration" {
 
 enum "booking_status" {
   schema = schema.tenant
-  values = ["PENDING", "CONFIRMED", "CANCELLED", "COMPLETED"]
+  values = ["PENDING", "CONFIRMED"]
 }
 
 
@@ -135,14 +105,6 @@ table "order_items" {
     null = false
     type = uuid
   }
-  column "reference_type" {
-    null = false
-    type = enum.order_item_reference_type
-  }
-  column "reference_id" {
-    null = false
-    type = uuid
-  }
   primary_key {
     columns = [column.id]
   }
@@ -151,12 +113,6 @@ table "order_items" {
     ref_columns = [table.orders.column.id]
     on_update   = NO_ACTION
     on_delete   = NO_ACTION
-  }
-  index "idx_order_items_reference_type" {
-    columns = [column.reference_type]
-  }
-  index "idx_order_items_reference_id" {
-    columns = [column.reference_id]
   }
 }
 

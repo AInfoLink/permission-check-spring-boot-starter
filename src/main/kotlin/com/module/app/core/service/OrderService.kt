@@ -3,7 +3,6 @@ package com.module.app.core.service
 import com.module.app.core.models.*
 import com.module.app.core.repository.OrderIdentityRepository
 import com.module.app.core.repository.OrderRepository
-import com.module.app.security.OrderIdentityAlreadyExists
 import com.module.app.security.OrderIdentityNotFound
 import com.module.app.security.OrderNotFound
 import com.module.app.security.UserNotFound
@@ -56,7 +55,8 @@ data class OrderQuery(
 )
 
 interface OrderService {
-    fun createOrderIdentity(identity: OrderIdentityCreation): OrderIdentity
+    fun getOrCreateOrderIdentity(identity: OrderIdentityCreation): OrderIdentity
+    fun getOrderIdentityById(identityId: UUID): OrderIdentity
     // Order operations
     fun createOrder(order: OrderCreation): Order
     fun getOrderById(orderId: UUID): Order
@@ -82,13 +82,14 @@ class DefaultOrderService(
      */
     @Require(Permission.ORDERS_CREATE)
     @Transactional
-    override fun createOrderIdentity(identity: OrderIdentityCreation): OrderIdentity {
+    override fun getOrCreateOrderIdentity(identity: OrderIdentityCreation): OrderIdentity {
         logger.info("Attempting to create order identity for email: ${identity.email}, type: ${identity.type}")
 
         // Check if identity with same email and type already exists
-        orderIdentityRepository.findByEmailAndType(identity.email, identity.type).getOrNull()?.let {
-            logger.warn("Order identity creation failed - duplicate found for email: ${identity.email}, type: ${identity.type}")
-            throw OrderIdentityAlreadyExists
+        val existingIdentity = orderIdentityRepository.findByEmailAndType(identity.email, identity.type).getOrNull()
+        if (existingIdentity != null) {
+            logger.info("Order identity creation failed - duplicate found for email: ${identity.email}, type: ${identity.type}")
+            return existingIdentity
         }
 
         val user: User? = identity.userId?.let { userId ->
@@ -110,6 +111,14 @@ class DefaultOrderService(
         val savedIdentity = orderIdentityRepository.save(orderIdentity)
         logger.info("Order identity created successfully - ID: ${savedIdentity.id}, email: ${savedIdentity.email}")
         return savedIdentity
+    }
+
+    override fun getOrderIdentityById(identityId: UUID): OrderIdentity {
+        logger.debug("Retrieving order identity by ID: $identityId")
+        return orderIdentityRepository.findById(identityId).getOrNull() ?: run {
+            logger.warn("Order identity not found for ID: $identityId")
+            throw OrderIdentityNotFound
+        }
     }
 
     /**

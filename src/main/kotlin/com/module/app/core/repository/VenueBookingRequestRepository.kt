@@ -4,8 +4,10 @@ import com.module.app.core.models.VenueBookingRequest
 import com.module.app.core.models.BookingStatus
 import com.module.app.core.models.Venue
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Lock
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
+import jakarta.persistence.LockModeType
 import org.springframework.stereotype.Repository
 import java.time.LocalDate
 import java.util.*
@@ -25,4 +27,19 @@ interface VenueBookingRequestRepository : JpaRepository<VenueBookingRequest, UUI
         @Param("date") date: LocalDate,
         @Param("status") status: BookingStatus
     ): List<VenueBookingRequest>
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+       SELECT br FROM VenueBookingRequest br 
+        WHERE br.venue.id = :venueId AND br.date = :date AND br.hour = :hour
+        AND (br.status = 'CONFIRMED' OR br.status = 'PENDING') 
+    """)
+    fun findConflictingBookingsWithLock(
+        @Param("venueId") venueId: UUID,
+        @Param("date") date: LocalDate,
+        @Param("hour") hour: Int
+    ): List<VenueBookingRequest>
+
+    @Query("SELECT br FROM VenueBookingRequest br WHERE br.venue.id IN :venueIds")
+    fun findAllByVenueIds(@Param("venueIds") venueIds: List<UUID>): List<VenueBookingRequest>
 }

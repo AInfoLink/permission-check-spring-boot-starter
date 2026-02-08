@@ -52,10 +52,11 @@ val OrderIdentityAlreadyExists = AppDomainException("OrderIdentityAlreadyExists"
 val TimeSlotOverlap = AppDomainException("TimeSlotOverlap", statusCode = HttpStatus.CONFLICT)
 
 // 400 Bad Request - OrderItem business rule validation
-val InvalidAmountForCategory = AppDomainException("InvalidAmountForCategory", statusCode = HttpStatus.BAD_REQUEST)
 val OrderAlreadyPaidModificationDenied = AppDomainException("OrderAlreadyPaidModificationDenied", statusCode = HttpStatus.BAD_REQUEST)
-val BasePriceNotSet = AppDomainException("BasePriceNotSet", statusCode = HttpStatus.BAD_REQUEST)
 val BookingMustBeInConsecutiveHours = AppDomainException("BookingMustBeInConsecutiveHours", statusCode = HttpStatus.BAD_REQUEST)
+val BookingConflict = AppDomainException("BookingConflict", statusCode = HttpStatus.CONFLICT)
+val InvalidBookingTime = AppDomainException("InvalidBookingTime", statusCode = HttpStatus.BAD_REQUEST)
+val BookingRequestEmpty = AppDomainException("BookingRequestEmpty", statusCode = HttpStatus.BAD_REQUEST)
 
 
 
