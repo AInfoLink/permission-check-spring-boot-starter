@@ -29,9 +29,7 @@ data class OrderIdentityCreation(
 
 data class OrderItemCreation(
     val description: String,
-    val amount: Int,
-    val referenceType: ReferenceType,
-    val referenceId: UUID
+    val amount: Int
 )
 
 data class OrderCreation(
@@ -138,14 +136,12 @@ class DefaultOrderService(
 
         // Create order items
         order.items.forEach { itemData ->
-            logger.debug("Processing order item - reference type: ${itemData.referenceType}, reference ID: ${itemData.referenceId}, amount: ${itemData.amount}")
+            logger.debug("Processing order item, amount: ${itemData.amount}")
 
             val orderItem = OrderItem(
                 description = itemData.description,
                 amount = itemData.amount,
                 order = newOrder,
-                referenceType = itemData.referenceType,
-                referenceId = itemData.referenceId,
                 createdAt = Instant.now(),
                 updatedAt = Instant.now()
             )

@@ -55,9 +55,9 @@ class VenueBookingRequest(
     var status: BookingStatus = BookingStatus.PENDING,
 
 
-    @ManyToOne
-    @JoinColumn(name = "order_identity_id", nullable = false)
-    val requestedBy: OrderIdentity,
+    @OneToOne
+    @JoinColumn(name = "order_item_id")
+    var orderItem: OrderItem,
 
     @Column(name = "notes", nullable = true, length = 1000)
     var notes: String? = null,
@@ -73,7 +73,7 @@ class VenueBookingRequest(
 
 ) : HasResourceOwner {
     override fun getResourceOwnerId(): String {
-        return requestedBy.getResourceOwnerId()
+        return orderItem.order.getResourceOwnerId()
     }
 
     init {
