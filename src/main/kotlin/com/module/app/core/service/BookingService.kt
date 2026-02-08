@@ -17,12 +17,11 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 import java.time.LocalDate
-import java.time.format.DateTimeParseException
 import java.util.*
 
 data class BookingRequestFormItem(
     val venueId: UUID,
-    val date: String,
+    val date: LocalDate,
     val hour: Int,
     val price: Int,
     val duration: TimeSlotDuration
@@ -36,7 +35,7 @@ data class BookingRequestForm(
 
 interface BookingService {
     fun submitBookingRequest(form: BookingRequestForm)
-//    fun validateBookingRequest(form: BookingRequestForm): List<Exception>
+    fun validateBookingRequest(form: BookingRequestForm): List<Exception>
 }
 
 @Service
@@ -91,12 +90,11 @@ class DefaultBookingService(
         val orderItemsList = order.items.toList()
         val bookingRequests = form.items.mapIndexed { index, item ->
             val venue = venues[item.venueId]!!
-            val bookingDate = LocalDate.parse(item.date)
             val orderItem = orderItemsList[index]
 
             VenueBookingRequest(
                 venue = venue,
-                date = bookingDate,
+                date = item.date,
                 hour = item.hour,
                 duration = item.duration,
                 status = BookingStatus.PENDING,
@@ -112,7 +110,9 @@ class DefaultBookingService(
         logger.info("Booking request submitted successfully - Order ID: ${order.id}, ${form.items.size} bookings created")
     }
 
-    private fun validateBookingRequest(form: BookingRequestForm): List<Exception> {
+    @Require(Permission.BOOKINGS_READ)
+    @Transactional(readOnly = true)
+    override fun validateBookingRequest(form: BookingRequestForm): List<Exception> {
         logger.debug("Validating booking request with ${form.items.size} items")
 
         if (form.items.isEmpty()) {
@@ -135,8 +135,16 @@ class DefaultBookingService(
         val errors = mutableListOf<Exception>()
         for (item in form.items) {
             val venue = venues[item.venueId]!!
+
             // Basic validation
             errors.addAll(validateBookingItem(item, venue))
+
+            // Conflict checking
+            val optionalConflict = checkConflictsReadOnly(item, venue, item.date)
+            if (optionalConflict != null) {
+                errors.add(optionalConflict)
+            }
+
         }
         logger.debug("Booking request validation completed with ${errors.size} errors")
         return errors
@@ -148,16 +156,14 @@ class DefaultBookingService(
      */
     private fun checkBookingConflictsWithLock(form: BookingRequestForm) {
         form.items.forEach { item ->
-            val bookingDate = LocalDate.parse(item.date)
-
             // Use pessimistic locking to prevent concurrent bookings
             val conflictingBookings = venueBookingRequestRepository.findConflictingBookingsWithLock(
-                item.venueId, bookingDate, item.hour
+                item.venueId, item.date, item.hour
             )
 
             if (conflictingBookings.isNotEmpty()) {
-                logger.warn("Time slot conflict detected for venue ${item.venueId} on $bookingDate at ${item.hour}:00")
-                throw BookingConflict.withDetails("Time slot conflict for venue ${item.venueId} on $bookingDate at ${item.hour}:00")
+                logger.warn("Time slot conflict detected for venue ${item.venueId} on ${item.date} at ${item.hour}:00")
+                throw BookingConflict.withDetails("Time slot conflict for venue ${item.venueId} on ${item.date} at ${item.hour}:00")
             }
         }
     }
@@ -174,83 +180,27 @@ class DefaultBookingService(
             errors.add(InvalidBookingTime.withDetails("Invalid hour: ${item.hour}"))
         }
 
-        // Validate date format and not in past
-        val bookingDate = try {
-            LocalDate.parse(item.date)
-        } catch (ex: DateTimeParseException) {
-            logger.warn("Invalid date format: ${item.date}")
-            errors.add(InvalidBookingTime.withDetails("Invalid date format: ${item.date}"))
-            return errors // Can't proceed with invalid date
-        }
-
-        if (bookingDate.isBefore(LocalDate.now())) {
-            logger.warn("Booking date is in the past: ${item.date}")
-            errors.add(InvalidBookingTime.withDetails("Booking date is in the past: ${item.date}"))
-        }
-
         // Validate venue schedule
         if (!venue.scheduleConfig.isActive) {
             logger.warn("Venue ${venue.name} is not available for booking")
             errors.add(InvalidBookingTime.withDetails("Venue ${venue.name} is not available for booking"))
         }
-
         return errors
     }
 
     /**
      * Checks for booking conflicts without locking (read-only validation)
      */
-//    private fun checkConflictsReadOnly(item: BookingRequestFormItem, venue: Venue, bookingDate: LocalDate): Exception? {
-//        val existingBookings = venueBookingRequestRepository.findByVenueAndDateAndHour(venue, bookingDate, item.hour)
-//        val activeBookings = existingBookings.filter {
-//            it.status == BookingStatus.CONFIRMED || it.status == BookingStatus.PENDING
-//        }
-//
-//        return if (activeBookings.isNotEmpty()) {
-//            logger.warn("Time slot conflict for venue ${venue.name} on $bookingDate at ${item.hour}:00")
-//            BookingConflict.withDetails("Time slot conflict for venue ${venue.name} on $bookingDate at ${item.hour}:00")
-//        } else null
-//    }
+    private fun checkConflictsReadOnly(item: BookingRequestFormItem, venue: Venue, bookingDate: LocalDate): Exception? {
+        val existingBookings = venueBookingRequestRepository.findByVenueAndDateAndHour(venue, bookingDate, item.hour)
+        val activeBookings = existingBookings.filter {
+            it.status == BookingStatus.CONFIRMED || it.status == BookingStatus.PENDING
+        }
 
-//    @Require(Permission.BOOKINGS_READ)
-//    @Transactional(readOnly = true)
-//    override fun validateBookingRequest(form: BookingRequestForm): List<Exception> {
-//        logger.debug("Validating booking request with ${form.items.size} items")
-//
-//        if (form.items.isEmpty()) {
-//            logger.warn("Booking request is empty")
-//            return listOf(BookingRequestEmpty)
-//        }
-//
-//        // Batch load all venues
-//        val venueIds = form.items.map { it.venueId }.distinct()
-//        val venues = venueRepository.findAllById(venueIds).associateBy { it.id }
-//
-//        // Check for missing venues
-//        val missingVenues = venueIds.filter { it !in venues }
-//        if (missingVenues.isNotEmpty()) {
-//            logger.warn("Venues not found: $missingVenues")
-//            return listOf(VenueNotFound.withDetails("Venues not found: $missingVenues"))
-//        }
-//
-//        // Validate each item
-//        val errors = mutableListOf<Exception>()
-//        for (item in form.items) {
-//            val venue = venues[item.venueId]!!
-//
-//            // Basic validation
-//            errors.addAll(validateBookingItem(item, venue))
-//
-//            // Conflict checking (only if date is valid)
-//            try {
-//                val bookingDate = LocalDate.parse(item.date)
-//                checkConflictsReadOnly(item, venue, bookingDate)?.let { errors.add(it) }
-//            } catch (ex: DateTimeParseException) {
-//                // Date validation error already added above
-//            }
-//        }
-//
-//        logger.debug("Booking request validation completed with ${errors.size} errors")
-//        return errors
-//    }
+        return if (activeBookings.isNotEmpty()) {
+            logger.warn("Time slot conflict for venue ${venue.name} on $bookingDate at ${item.hour}:00")
+            BookingConflict.withDetails("Time slot conflict for venue ${venue.name} on $bookingDate at ${item.hour}:00")
+        } else null
+    }
+
 }
