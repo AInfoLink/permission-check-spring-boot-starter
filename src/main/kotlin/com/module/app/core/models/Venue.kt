@@ -7,11 +7,10 @@ import java.util.*
 
 
 @Entity
-@Table(name = "venues"
-, uniqueConstraints = [
-    UniqueConstraint(columnNames = ["priority", "venue_group_id"]),
-    UniqueConstraint(columnNames = ["name", "venue_group_id"])
-]
+@Table(name = "venues", uniqueConstraints = [
+        UniqueConstraint(columnNames = ["priority", "venue_group_id"]),
+        UniqueConstraint(columnNames = ["name", "venue_group_id"])
+    ]
 )
 class Venue(
     @Id
