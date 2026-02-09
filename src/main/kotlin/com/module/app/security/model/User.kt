@@ -1,6 +1,7 @@
 package com.module.app.security.model
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import io.github.common.permission.provider.UserIdentityRequired
 import jakarta.persistence.*
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.userdetails.UserDetails
@@ -51,7 +52,7 @@ class User(
     @Column(name = "is_phone_verified", nullable = false)
     var isPhoneVerified: Boolean = false,
 
-    ) : UserDetails {
+    ) : UserDetails, UserIdentityRequired {
 
     companion object {
         const val DEFAULT_PLATFORM = "LOCAL"
@@ -91,5 +92,8 @@ class User(
     fun assumeRoles(roles: Iterable<String>) {
         this.systemRoles.clear()
         this.systemRoles.addAll(roles)
+    }
+    override fun getCurrentUserId(): UUID {
+        return this.id
     }
 }

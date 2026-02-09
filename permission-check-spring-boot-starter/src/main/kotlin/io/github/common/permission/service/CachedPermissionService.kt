@@ -9,7 +9,7 @@ import java.util.*
  * Cached implementation of PermissionService that delegates to a PermissionRepository.
  * Provides automatic caching with Spring Cache abstraction.
  */
-class CachedPermissionService(
+open class CachedPermissionService(
     private val permissionRepository: PermissionRepository
 ) : PermissionService {
 

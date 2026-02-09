@@ -35,7 +35,6 @@ class PermissionAspect(
         val className = joinPoint.target.javaClass.simpleName
 
         val currentUserId = userProvider.getCurrentUserId()
-            ?: throw SecurityException("User not authenticated")
 
         if (loggingProperties.debugEnabled) {
             logger.debug("Permission check initiated for user=$currentUserId method=$className.$methodName")
