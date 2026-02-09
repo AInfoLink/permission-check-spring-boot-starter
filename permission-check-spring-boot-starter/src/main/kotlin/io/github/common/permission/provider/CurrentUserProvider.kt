@@ -2,8 +2,8 @@ package io.github.common.permission.provider
 
 import java.util.*
 
-interface UserIdentityRequired {
-    fun getCurrentUserId(): UUID
+interface WithPermissionIdentity {
+    fun getPermissionIdentity(): UUID
 }
 
 /**

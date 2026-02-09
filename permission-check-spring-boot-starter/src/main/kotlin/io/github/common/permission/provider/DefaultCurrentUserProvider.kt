@@ -19,9 +19,9 @@ class DefaultCurrentUserProvider : CurrentUserProvider {
     override fun getCurrentUserId(): UUID {
         val authentication = SecurityContextHolder.getContext().authentication
         val principal = authentication.principal
-        if (principal !is UserIdentityRequired) {
+        if (principal !is WithPermissionIdentity) {
             throw IllegalStateException("Principal does not implement UserIdentityRequired - cannot extract user ID")
         }
-        return principal.getCurrentUserId()
+        return principal.getPermissionIdentity()
     }
 }
