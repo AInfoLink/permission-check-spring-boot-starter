@@ -10,8 +10,7 @@ import com.module.app.security.VenueAlreadyExists
 import com.module.app.security.VenueGroupAlreadyExists
 import com.module.app.security.VenueGroupNotFound
 import com.module.app.security.VenueNotFound
-import com.module.app.security.annotation.Permission
-import com.module.app.security.annotation.Require
+import io.github.common.permission.annotation.Require
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
@@ -98,7 +97,7 @@ class DefaultVenueService(
     /**
      * Create venue group, ensuring name uniqueness
      */
-    @Require(Permission.VENUE_GROUPS_CREATE)
+    @Require("venuegroups:create")
     @Transactional
     override fun createVenueGroup(group: VenueGroupCreation): VenueGroup {
         logger.info("Creating venue group with name: ${group.name}, isDefault: ${group.isDefault}")
@@ -180,7 +179,7 @@ class DefaultVenueService(
     /**
      * Create venue with database-level referential integrity
      */
-    @Require(Permission.VENUES_CREATE)
+    @Require("venues:create")
     @Transactional
     override fun createVenue(venue: VenueCreation): Venue {
         logger.info("Creating venue: ${venue.name} in group: ${venue.venueGroupId}")
@@ -219,7 +218,7 @@ class DefaultVenueService(
     /**
      * Query venue
      */
-    @Require(Permission.VENUES_READ)
+    @Require("venues:read")
     @Transactional(readOnly = true)
     override fun getVenue(venueId: UUID): Venue {
         return venueRepository.findById(venueId).getOrNull() ?: throw VenueNotFound
@@ -228,7 +227,7 @@ class DefaultVenueService(
     /**
      * Query venue by name
      */
-    @Require(Permission.VENUES_READ)
+    @Require("venues:read")
     @Transactional(readOnly = true)
     override fun getVenueByName(name: String): Venue {
         return venueRepository.findByName(name).getOrNull() ?: throw VenueNotFound
@@ -237,7 +236,7 @@ class DefaultVenueService(
     /**
      * Query all venues by venue group
      */
-    @Require(Permission.VENUES_READ)
+    @Require("venues:read")
     @Transactional(readOnly = true)
     override fun getVenuesByGroup(venueGroupId: UUID): List<Venue> {
         return venueRepository.findByVenueGroupId(venueGroupId)
@@ -246,7 +245,7 @@ class DefaultVenueService(
     /**
      * Query all venues
      */
-    @Require(Permission.VENUES_READ)
+    @Require("venues:read")
     @Transactional(readOnly = true)
     override fun getAllVenues(): List<Venue> {
         return venueRepository.findAll()
@@ -255,7 +254,7 @@ class DefaultVenueService(
     /**
      * Search venues (supports pagination and multiple query criteria)
      */
-    @Require(Permission.VENUES_READ)
+    @Require("venues:read")
     @Transactional(readOnly = true)
     override fun searchVenues(query: VenueQuery, pageable: Pageable): Page<Venue> {
         return venueRepository.searchVenues(
@@ -273,7 +272,7 @@ class DefaultVenueService(
     /**
      * Update venue information
      */
-    @Require(Permission.VENUES_UPDATE)
+    @Require("venues:update")
     @Transactional
     override fun updateVenue(venueId: UUID, update: VenueUpdate): Venue {
         val venue = venueRepository.findById(venueId).getOrNull() ?: throw VenueNotFound
@@ -297,7 +296,7 @@ class DefaultVenueService(
     /**
      * Update venue schedule configuration
      */
-    @Require(Permission.VENUES_UPDATE)
+    @Require("venues:update")
     @Transactional
     fun updateVenueScheduleConfig(venueId: UUID, bookingSlotType: BookingSlotType?, isActive: Boolean?): Venue {
         val venue = venueRepository.findById(venueId).getOrNull() ?: throw VenueNotFound
@@ -311,7 +310,7 @@ class DefaultVenueService(
     /**
      * Move venue to different venue group
      */
-    @Require(Permission.VENUES_UPDATE)
+    @Require("venues:update")
     @Transactional
     fun moveVenueToGroup(venueId: UUID, newVenueGroupId: UUID): Venue {
         val venue = venueRepository.findById(venueId).getOrNull() ?: throw VenueNotFound
@@ -325,7 +324,7 @@ class DefaultVenueService(
     /**
      * Delete venue
      */
-    @Require(Permission.VENUES_DELETE)
+    @Require("venues:delete")
     @Transactional
     override fun deleteVenue(venueId: UUID) {
         val venue = venueRepository.findById(venueId).getOrNull() ?: return

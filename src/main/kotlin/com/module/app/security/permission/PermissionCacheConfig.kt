@@ -7,9 +7,10 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 
-@Configuration
-@EnableCaching
-@Profile("memory-cache")
+// DISABLED: Using permission-check-spring-boot-starter cache configuration instead
+// @Configuration
+// @EnableCaching
+// @Profile("memory-cache")
 class InMemoryPermissionCacheConfig {
 
     @Bean

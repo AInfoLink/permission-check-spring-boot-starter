@@ -1,33 +1,30 @@
-package com.module.app.security.aop
+package io.github.common.permission.aop
 
 import io.github.common.permission.annotation.Require
 import io.github.common.permission.annotation.extractPermissions
-import com.module.app.security.permission.PermissionEvaluator
-import com.module.app.security.model.User
-import com.module.app.utils.Safe
+import io.github.common.permission.autoconfigure.PermissionCheckProperties
+import io.github.common.permission.exception.PermissionDeniedException
+import io.github.common.permission.provider.CurrentUserProvider
+import io.github.common.permission.service.PermissionEvaluator
 import org.aspectj.lang.ProceedingJoinPoint
 import org.aspectj.lang.annotation.Around
 import org.aspectj.lang.annotation.Aspect
 import org.aspectj.lang.reflect.MethodSignature
 import org.slf4j.LoggerFactory
-import org.springframework.security.core.context.SecurityContextHolder
-import org.springframework.stereotype.Component
 import java.util.*
 
-data class PermissionDeniedException(
-    val userId: UUID,
-    val requiredPermissions: String,
-    val methodName: String
-) : Exception(
-    "Permission denied for user=$userId. Required permission(s): $requiredPermissions"
-)
-
+/**
+ * AOP Aspect for intercepting methods annotated with @Require.
+ * This aspect is completely domain-agnostic and works with any user model
+ * through the CurrentUserProvider interface.
+ */
 @Aspect
-// @Component - DISABLED: Using permission-check-spring-boot-starter instead
-class UserPermissionAspect(
-    private val permissionEvaluator: PermissionEvaluator
+class PermissionAspect(
+    private val permissionEvaluator: PermissionEvaluator,
+    private val userProvider: CurrentUserProvider,
+    private val loggingProperties: PermissionCheckProperties.LoggingProperties
 ) {
-    private val logger = LoggerFactory.getLogger(UserPermissionAspect::class.java)
+    private val logger = LoggerFactory.getLogger(PermissionAspect::class.java)
 
     @Around("@annotation(require)")
     fun around(
@@ -37,13 +34,18 @@ class UserPermissionAspect(
         val methodName = (joinPoint.signature as MethodSignature).method.name
         val className = joinPoint.target.javaClass.simpleName
 
-        val currentUserId = getCurrentUserId()
+        val currentUserId = userProvider.getCurrentUserId()
             ?: throw SecurityException("User not authenticated")
 
-        logger.debug("Permission check initiated for user=$currentUserId method=$className.$methodName")
+        if (loggingProperties.debugEnabled) {
+            logger.debug("Permission check initiated for user=$currentUserId method=$className.$methodName")
+        }
 
         validatePermissions(currentUserId, require, methodName)
-        logger.debug("Permission granted for user=$currentUserId method=$className.$methodName")
+
+        if (loggingProperties.debugEnabled) {
+            logger.debug("Permission granted for user=$currentUserId method=$className.$methodName")
+        }
 
         return joinPoint.proceed()
     }
@@ -53,8 +55,12 @@ class UserPermissionAspect(
         if (hasPermission) {
             return
         }
+
         val permissionsInfo = getPermissionsContext(require)
-        logger.warn("Permission denied for user=$userId method=$methodName. Required: $permissionsInfo")
+
+        if (loggingProperties.auditEnabled) {
+            logger.warn("Permission denied for user=$userId method=$methodName. Required: $permissionsInfo")
+        }
 
         throw PermissionDeniedException(
             userId = userId,
@@ -64,7 +70,8 @@ class UserPermissionAspect(
     }
 
     /**
-     * Check user permissions (simplified version - does not handle resource owner validation)
+     * Check user permissions against the @Require annotation.
+     * Supports both single and multiple permission checking with AND/OR logic.
      */
     private fun checkPermissions(userId: UUID, require: Require): Boolean {
         val permissionsToCheck = require.extractPermissions()
@@ -92,7 +99,7 @@ class UserPermissionAspect(
     }
 
     /**
-     * Get permission information string (for logging and error messages)
+     * Get permission information string for logging and error messages.
      */
     private fun getPermissionsContext(require: Require): String {
         val permissionsToCheck = require.extractPermissions()
@@ -111,29 +118,4 @@ class UserPermissionAspect(
             true -> "AND"
             false -> "OR"
         }
-
-    /**
-     * Get current user ID from Spring Security Context
-     */
-    private fun getCurrentUserId(): UUID? {
-        return Safe.call(logger) {
-            logger.debug("Retrieving current user ID from security context")
-            val context = SecurityContextHolder.getContext()
-            val authentication = context.authentication
-
-            if (authentication == null) {
-                logger.warn("No authentication found in security context")
-                return@call null
-            }
-
-            val principal = authentication.principal
-            val user = principal as? User
-
-            if (user == null) {
-                logger.warn("Principal is not a User instance: ${principal?.javaClass?.simpleName}")
-                return@call null
-            }
-            user.id
-        }
-    }
 }

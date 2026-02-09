@@ -3,7 +3,6 @@ package com.module.app.security.permission
 import com.module.app.core.models.UserProfile
 import com.module.app.core.service.UserProfileService
 import com.module.app.core.service.PermissionReloadEvent
-import com.module.app.security.annotation.Permission
 import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
@@ -13,7 +12,7 @@ import org.springframework.stereotype.Service
 import java.util.UUID
 
 
-@Service
+// @Service - DISABLED: Using permission-check-spring-boot-starter instead
 class InMemoryCachedUserPermissionService(
     private val userProfileService: UserProfileService
 ): UserPermissionService {
@@ -38,7 +37,7 @@ class InMemoryCachedUserPermissionService(
     }
 }
 
-@Component
+// @Component - DISABLED: Using permission-check-spring-boot-starter instead
 class DefaultPermissionEvaluator(
     private val userPermissionService: UserPermissionService
 ): PermissionEvaluator {
@@ -69,7 +68,7 @@ class DefaultPermissionEvaluator(
     private fun matchesPermission(userPermissions: Set<String>, requiredPermission: String): Boolean {
 
         // System-wide permissions
-        if (userPermissions.contains(Permission.SYSTEM_ALL.toString())) {
+        if (userPermissions.contains("*:*")) {
             return true
         }
 

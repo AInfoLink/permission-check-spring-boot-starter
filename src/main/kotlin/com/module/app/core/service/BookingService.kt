@@ -10,8 +10,7 @@ import com.module.app.security.BookingConflict
 import com.module.app.security.BookingRequestEmpty
 import com.module.app.security.InvalidBookingTime
 import com.module.app.security.VenueNotFound
-import com.module.app.security.annotation.Permission
-import com.module.app.security.annotation.Require
+import io.github.common.permission.annotation.Require
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -51,7 +50,7 @@ class DefaultBookingService(
     // make sure the pricing and order identity are properly set in the form before calling this method,
     // as it assumes the form is already validated for pricing and identity existence.
     // and the form should be fully prepared with correct totalPrice before calling this method
-    @Require(Permission.BOOKINGS_CREATE)
+    @Require("bookings:create")
     @Transactional
     override fun submitBookingRequest(form: BookingRequestForm) {
         logger.info("Submitting booking request with ${form.items.size} items")
@@ -110,7 +109,7 @@ class DefaultBookingService(
         logger.info("Booking request submitted successfully - Order ID: ${order.id}, ${form.items.size} bookings created")
     }
 
-    @Require(Permission.BOOKINGS_READ)
+    @Require("bookings:read")
     @Transactional(readOnly = true)
     override fun validateBookingRequest(form: BookingRequestForm): List<Exception> {
         logger.debug("Validating booking request with ${form.items.size} items")

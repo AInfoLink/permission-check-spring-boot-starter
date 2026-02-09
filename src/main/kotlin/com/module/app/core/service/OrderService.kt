@@ -6,8 +6,7 @@ import com.module.app.core.repository.OrderRepository
 import com.module.app.security.OrderIdentityNotFound
 import com.module.app.security.OrderNotFound
 import com.module.app.security.UserNotFound
-import com.module.app.security.annotation.Permission
-import com.module.app.security.annotation.Require
+import io.github.common.permission.annotation.Require
 import com.module.app.security.repository.UserRepository
 import com.module.app.security.model.User
 import org.springframework.data.domain.Page
@@ -80,7 +79,7 @@ class DefaultOrderService(
     /**
      * Create order identity with optional association to existing user
      */
-    @Require(Permission.ORDERS_CREATE)
+    @Require("orders:create")
     @Transactional
     override fun getOrCreateOrderIdentity(identity: OrderIdentityCreation): OrderIdentity {
         logger.info("Attempting to create order identity for email: ${identity.email}, type: ${identity.type}")
@@ -124,7 +123,7 @@ class DefaultOrderService(
     /**
      * Create order
      */
-    @Require(Permission.ORDERS_CREATE)
+    @Require("orders:create")
     @Transactional
     override fun createOrder(order: OrderCreation): Order {
         logger.info("Creating order for identity: ${order.identityId}, amount: ${order.amount}, items count: ${order.items.size}")
@@ -165,7 +164,7 @@ class DefaultOrderService(
     /**
      * Query order by ID
      */
-    @Require(Permission.ORDERS_READ)
+    @Require("orders:read")
     @Transactional(readOnly = true)
     override fun getOrderById(orderId: UUID): Order {
         logger.debug("Retrieving order by ID: $orderId")
@@ -178,7 +177,7 @@ class DefaultOrderService(
     /**
      * Unified order search method supporting multiple query criteria and pagination
      */
-    @Require(Permission.ORDERS_READ)
+    @Require("orders:read")
     @Transactional(readOnly = true)
     override fun searchOrders(query: OrderQuery, pageable: Pageable): Page<Order> {
         return orderRepository.findOrdersWithCriteria(
@@ -192,7 +191,7 @@ class DefaultOrderService(
     /**
      * Query all orders
      */
-    @Require(Permission.ORDERS_READ)
+    @Require("orders:read")
     @Transactional(readOnly = true)
     override fun getAllOrders(): List<Order> {
         return orderRepository.findAll()
@@ -201,7 +200,7 @@ class DefaultOrderService(
     /**
      * Update order information
      */
-    @Require(Permission.ORDERS_UPDATE)
+    @Require("orders:update")
     @Transactional
     override fun updateOrder(orderId: UUID, update: OrderUpdate): Order {
         val order = orderRepository.findById(orderId).getOrNull() ?: throw OrderNotFound
@@ -222,7 +221,7 @@ class DefaultOrderService(
     /**
      * Update order payment status
      */
-    @Require(Permission.ORDERS_UPDATE)
+    @Require("orders:update")
     @Transactional
     override fun updatePaymentStatus(orderId: UUID, update: PaymentStatusUpdate): Order {
         logger.info("Updating payment status for order: $orderId to status: ${update.status}")
@@ -243,7 +242,7 @@ class DefaultOrderService(
     /**
      * Delete order
      */
-    @Require(Permission.ORDERS_DELETE)
+    @Require("orders:delete")
     @Transactional
     override fun deleteOrder(orderId: UUID) {
         logger.info("Attempting to delete order: $orderId")

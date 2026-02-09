@@ -5,8 +5,7 @@ import com.module.app.core.repository.OrderItemRepository
 import com.module.app.security.BulkUpdatePartialFailure
 import com.module.app.security.OrderAlreadyPaidModificationDenied
 import com.module.app.security.OrderItemNotFound
-import com.module.app.security.annotation.Permission
-import com.module.app.security.annotation.Require
+import io.github.common.permission.annotation.Require
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.*
@@ -39,7 +38,7 @@ class DefaultOrderItemService(
     /**
      * 查詢訂單項目
      */
-    @Require(Permission.ORDER_ITEMS_READ)
+    @Require("orderitems:read")
     @Transactional(readOnly = true)
     override fun getOrderItem(itemId: UUID): OrderItem {
         return orderItemRepository.findById(itemId).getOrNull() ?: throw OrderItemNotFound
@@ -48,7 +47,7 @@ class DefaultOrderItemService(
     /**
      * 查詢所有訂單項目
      */
-    @Require(Permission.ORDER_ITEMS_READ)
+    @Require("orderitems:read")
     @Transactional(readOnly = true)
     override fun getAllOrderItems(): List<OrderItem> {
         return orderItemRepository.findAll()
@@ -57,7 +56,7 @@ class DefaultOrderItemService(
     /**
      * 更新訂單項目信息
      */
-    @Require(Permission.ORDER_ITEMS_UPDATE)
+    @Require("orderitems:update")
     @Transactional
     override fun updateOrderItem(itemId: UUID, update: OrderItemUpdate): OrderItem {
         val orderItem = orderItemRepository.findById(itemId).getOrNull() ?: throw OrderItemNotFound
@@ -80,7 +79,7 @@ class DefaultOrderItemService(
     /**
      * 刪除訂單項目
      */
-    @Require(Permission.ORDER_ITEMS_DELETE)
+    @Require("orderitems:delete")
     @Transactional
     override fun deleteOrderItem(itemId: UUID) {
         val orderItem = orderItemRepository.findById(itemId).getOrNull() ?: return
@@ -90,7 +89,7 @@ class DefaultOrderItemService(
     /**
      * 根據金額範圍查詢訂單項目
      */
-    @Require(Permission.ORDER_ITEMS_READ)
+    @Require("orderitems:read")
     @Transactional(readOnly = true)
     override fun getOrderItemsByAmountRange(minAmount: Int, maxAmount: Int): List<OrderItem> {
         return orderItemRepository.findAll()
@@ -100,7 +99,7 @@ class DefaultOrderItemService(
     /**
      * 批量更新訂單項目
      */
-    @Require(Permission.ORDER_ITEMS_UPDATE)
+    @Require("orderitems:update")
     @Transactional
     override fun bulkUpdateOrderItems(bulkUpdate: BulkOrderItemUpdate): List<OrderItem> {
         val updatedItems = mutableListOf<OrderItem>()

@@ -7,8 +7,7 @@ import com.module.app.security.TenantRoleNotFound
 import com.module.app.security.UserNotFound
 import com.module.app.security.UserProfileAlreadyExists
 import com.module.app.security.UserProfileNotCreated
-import com.module.app.security.annotation.Permission
-import com.module.app.security.annotation.Require
+import io.github.common.permission.annotation.Require
 import com.module.app.security.repository.UserRepository
 import org.springframework.context.ApplicationEvent
 import org.springframework.context.ApplicationEventPublisher
@@ -70,7 +69,7 @@ class DefaultUserProfileService(
     /**
      * 創建用戶檔案，使用數據庫層級參照完整性
      */
-    @Require(Permission.USERS_CREATE)
+    @Require("users:create")
     @Transactional
     override fun createUserProfile(userId: UUID, profile: UserProfileCreation): UserProfile {
         // 獲取 User 實體，如果不存在會拋出異常
@@ -101,7 +100,7 @@ class DefaultUserProfileService(
     /**
      * 查詢用戶檔案，由於使用外鍵約束，不再需要應用層驗證
      */
-    @Require(Permission.USERS_READ)
+    @Require("users:read")
     @Transactional(readOnly = true)
     override fun getUserProfile(userId: UUID): UserProfile {
         return getUserProfileInternal(userId)
@@ -118,7 +117,7 @@ class DefaultUserProfileService(
     /**
      * 更新用戶檔案信息
      */
-    @Require(Permission.USERS_UPDATE)
+    @Require("users:update")
     @Transactional
     override fun updateUserProfile(userId: UUID, update: UserProfileUpdate): UserProfile {
         val userProfile = userProfileRepository.findByUserId(userId).getOrNull() ?: throw UserProfileNotCreated
@@ -139,7 +138,7 @@ class DefaultUserProfileService(
     /**
      * 刪除用戶檔案（保留全域用戶）
      */
-    @Require(Permission.USERS_DELETE)
+    @Require("users:delete")
     @Transactional
     override fun deleteUserProfile(userId: UUID) {
         val userProfile = userProfileRepository.findByUserId(userId).getOrNull() ?: return
@@ -149,7 +148,7 @@ class DefaultUserProfileService(
     /**
      * 添加租戶角色
      */
-    @Require(permission = Permission.ROLES_ASSIGN)
+    @Require("roles:assign")
     @Transactional
     override fun addTenantRole(userId: UUID, roleOperation: TenantRoleOperation): UserProfile {
         val userProfile = userProfileRepository.findByUserId(userId).getOrNull() ?: throw UserProfileNotCreated
@@ -162,7 +161,7 @@ class DefaultUserProfileService(
     /**
      * 移除租戶角色
      */
-    @Require(permission = Permission.ROLES_UNASSIGN)
+    @Require("roles:unassign")
     @Transactional
     override fun removeTenantRole(userId: UUID, roleOperation: TenantRoleOperation): UserProfile {
         val userProfile = userProfileRepository.findByUserId(userId).getOrNull() ?: throw UserProfileNotCreated
@@ -175,7 +174,7 @@ class DefaultUserProfileService(
     /**
      * 更新錢包餘額
      */
-    @Require(Permission.WALLETS_ADJUST)
+    @Require("wallets:adjust")
     @Transactional
     override fun updateWalletBalance(userId: UUID, balanceUpdate: WalletBalanceUpdate): UserProfile {
         val userProfile = userProfileRepository.findByUserId(userId).getOrNull() ?: throw UserProfileNotCreated

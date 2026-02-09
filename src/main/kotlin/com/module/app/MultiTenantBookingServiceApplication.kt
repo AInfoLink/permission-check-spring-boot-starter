@@ -1,5 +1,6 @@
 package com.module.app
 
+import io.github.common.permission.autoconfigure.EnablePermissionCheck
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan
 import org.springframework.boot.context.properties.EnableConfigurationProperties
@@ -12,6 +13,7 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy
 @ConfigurationPropertiesScan
 @EnableFeignClients
 @EnableAspectJAutoProxy
+@EnablePermissionCheck
 class MultiTenantBookingServiceApplication
 
 fun main(args: Array<String>) {
