@@ -1,6 +1,6 @@
 package com.module.app.security.web.controller
 import com.module.app.monitoring.otel.TraceUtils
-import com.module.app.security.aop.PermissionDeniedException
+import io.github.common.permission.exception.PermissionDeniedException
 import jakarta.servlet.http.HttpServletRequest
 import org.slf4j.LoggerFactory
 import org.springframework.core.annotation.Order
