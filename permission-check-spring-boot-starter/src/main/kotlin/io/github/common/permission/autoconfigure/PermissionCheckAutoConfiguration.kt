@@ -1,9 +1,6 @@
 package io.github.common.permission.autoconfigure
 
-import io.github.common.permission.provider.CurrentUserProvider
-import io.github.common.permission.provider.PermissionRepository
 import org.springframework.boot.autoconfigure.AutoConfiguration
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.context.annotation.Import
 
