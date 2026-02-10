@@ -78,3 +78,13 @@ allOpen {
 tasks.withType<Test> {
     useJUnitPlatform()
 }
+
+// Disable bootJar for root project since it's not an executable application
+tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
+    enabled = false
+}
+
+// Disable plain jar since we're not building a library from root
+tasks.named<Jar>("jar") {
+    enabled = false
+}
